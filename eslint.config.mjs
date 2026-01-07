@@ -15,4 +15,12 @@ const eslintConfig = defineConfig([
   ]),
 ]);
 
-export default eslintConfig;
+const config = {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+
+export default config;
+
+// export default eslintConfig;
