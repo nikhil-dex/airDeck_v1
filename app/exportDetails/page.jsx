@@ -142,8 +142,8 @@ const handleExport = useCallback(async () => {
   }[exportStatus];
 
   const buttonStyle = {
-    idle: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500',
-    loading: 'bg-indigo-400 cursor-not-allowed',
+    idle: 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:ring-green-400',
+    loading: 'bg-gray-400 cursor-not-allowed',
     success: 'bg-green-500 hover:bg-green-600 focus:ring-green-400',
     error: 'bg-red-500 hover:bg-red-600 focus:ring-red-400',
   }[exportStatus];
@@ -184,92 +184,99 @@ const handleExport = useCallback(async () => {
   }, [session, router]);
 
   if(isLoading){
-    return <div>Loading...</div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
+        <div className="text-center">
+          <svg className="animate-spin h-12 w-12 mx-auto mb-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-gray-600 font-medium">Loading...</p>
+        </div>
+      </div>
+    )
   }
   return (
-    <div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
       <Navbar />
-      <div className="container mt-5">
-        <div className="btn m-2">
+      <div className="container mx-auto px-4 py-8">
+        <button
+          className="mb-6 px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+          onClick={() => router.back()}
+        >
+          ← Go Back
+        </button>
 
-        <button className="bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500 p-2 rounded" onClick={() => router.back()}>Go back</button>
-        </div>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+              Export Your Presentation
+            </h1>
+            <p className="text-lg text-gray-600">
+              Add a title and download your presentation as PowerPoint
+            </p>
+          </div>
 
-        <div className="flex w-screen h-screen items-center flex-col">
-             {/* <form action=""></form> */}
-  
-        <form onSubmit={(e) => { e.preventDefault(); handleExport(); savePpt(); }} className="space-y-6">
-          {/* Title Input Field */}
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-              Presentation Title
-            </label>
-            <div className="mt-1">
+          <form onSubmit={(e) => { e.preventDefault(); handleExport(); savePpt(); }} className="space-y-8">
+            <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+              <label htmlFor="title" className="block text-lg font-semibold text-gray-900 mb-3">
+                Presentation Title
+              </label>
               <input
                 id="title"
                 name="title"
                 type="text"
                 required
-                placeholder="Enter the main title for your presentation"
+                placeholder="Enter your presentation title..."
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-base transition duration-150 ease-in-out"
+                className="block w-full px-5 py-4 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg transition-all outline-none"
                 disabled={isDisabled}
               />
+              <p className="mt-3 text-sm text-gray-500">This will be used as your filename and first slide title</p>
             </div>
-            <p className="mt-2 text-xs text-gray-500">This title will be used for the first slide and the filename.</p>
-          </div>
 
-    <div style={{height: "50vh", width: "100vh"} } className="flex p-1 bg-white/80 backdrop-blur-sm shadow-lg">
-        {/* <div className="absolute z-41 right-0 bg-red-500 text-white px-4 py-2">slides {point+1} of {code.length}</div> */}
-      {/* Right Side Preview */}
-      <div id={`slide-${point}`} className="w-full">
-        <iframe
-          className="w-full h-full bg-white rounded-lg"
-          srcDoc={code[point]}
-          sandbox="allow-scripts allow-same-origin"
-        />
+            <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Preview</h3>
+              <div className="aspect-video w-full bg-gray-100 rounded-lg overflow-hidden shadow-inner">
+                <iframe
+                  className="w-full h-full"
+                  srcDoc={code[point]}
+                  sandbox="allow-scripts allow-same-origin"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                type="submit"
+                onClick={handleExport}
+                disabled={isDisabled}
+                className={`px-8 py-4 flex justify-center items-center gap-3 text-lg font-semibold rounded-xl shadow-lg text-white transition-all duration-200 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 ${buttonStyle}`}
+              >
+                {exportStatus === 'loading' ? (
+                  <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <Download className="w-6 h-6"/>
+                )}
+                <span>{buttonText}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={savePpt}
+                className="px-8 py-4 flex justify-center items-center gap-3 text-lg font-semibold rounded-xl shadow-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white transition-all duration-200 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300"
+              >
+                <Presentation className="w-6 h-6"/>
+                <span>Generate Link</span>
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
-    
-
-   
-
-        <div className="flex justify-center">
-
-    <button
-            type="submit"
-            onClick={handleExport}
-            disabled={isDisabled}
-            className={`mt-5 px-2 py-2 flex justify-center items-center space-x-2 border border-transparent text-base font-semibold rounded-xl shadow-md text-white transition duration-200 ease-in-out transform hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 ${buttonStyle}`}
-          >
-            {exportStatus === 'loading' ? (
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : (
-              <Download className="w-5 h-5 "/>
-            )}
-            <span className="bg-gray-100 p-2 rounded-full text-black">{exportStatus === 'loading' ? 'Exporting' : 'Export'} |</span>
-          </button>
-          <button onClick={savePpt} className="mt-5 px-2 py-2 flex justify-center items-center space-x-2 border border-transparent text-base font-semibold rounded-xl shadow-md text-white transition duration-200 ease-in-out transform hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2">
-            <Presentation/> 
-           <span className="bg-gray-100 p-2 rounded-full text-black"> 
-            generate link |</span>
-          </button>
-        </div>
-        </form>
-        <div className="container">
-
-          
-        </div>
-        </div>
-    
-
-        
-    </div>
-    
     </div>
   );
 }

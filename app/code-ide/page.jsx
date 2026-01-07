@@ -117,24 +117,33 @@ useEffect(() => {
   }, [session, router]);
 
   if(isLoading){
-    return <div>Loading...</div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="text-center">
+          <svg className="animate-spin h-12 w-12 mx-auto mb-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-gray-300 font-medium">Loading Editor...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div>
+    <div className="bg-gray-900">
       <Navbar />
       <div className="flex h-screen">
-           
-        <div className="absolute z-41 right-0 display-inline">
+
+        <div className="absolute top-16 right-4 z-50 flex items-center gap-2">
           <button
             onClick={exportHandle}
-            className="px-3 py-1 m-1 rounded bg-blue-600 text-white"
+            className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
           >
             Done Editing
           </button>
-          <span className="bg-red-500 text-white px-4 py-2 rounded ">
-            
-          slides {point + 1} of {code.length}
+          <span className="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold shadow-lg">
+            Slide {point + 1} / {code.length}
           </span>
         </div>
 
@@ -142,20 +151,22 @@ useEffect(() => {
         <button
           id="collapse-button"
           onClick={handleCollapse}
-          className="absolute z-40 bg-red-500 text-white px-4 py-2"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-40 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-r-lg shadow-lg transition-all"
+          title="Hide editor"
         >
-          ^
+          &#8592;
         </button>
         <button
           id="uncollapse-button"
           onClick={handleUnCollapse}
-          className="absolute z-40 bg-red-500 text-white px-4 py-2 rotate-180 hidden"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-40 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-r-lg shadow-lg transition-all hidden"
+          title="Show editor"
         >
-          ^
+          &#8594;
         </button>
 
         {/* Editor */}
-        <div id="editor-container" className="w-1/2 border-r transition-all duration-500 ease-in-out overflow-hidden">
+        <div id="editor-container" className="w-1/2 border-r border-gray-700 transition-all duration-500 ease-in-out overflow-hidden">
           <Editor
             height="100%"
             defaultLanguage="html"
@@ -169,35 +180,34 @@ useEffect(() => {
         {/* Preview */}
        <div
   id="preview-container"
-  className="w-1/2 transition-all duration-500 ease-in-out"
+  className="w-1/2 transition-all duration-500 ease-in-out bg-gray-800 p-4"
 >
-
           <iframe
-            className="w-full h-full bg-white"
+            className="w-full h-full bg-white rounded-lg shadow-2xl"
             srcDoc={code[point]}
             sandbox="allow-scripts allow-same-origin"
           />
         </div>
 
         {/* Navigation Buttons */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-40">
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-40 flex items-center gap-3 bg-gray-800 px-6 py-3 rounded-full shadow-2xl border border-gray-700">
           <button
             onClick={point == 0 ? null : () => setPoint(point - 1)}
-            className="px-3 py-1 m-1 rounded bg-blue-600 text-white"
+            disabled={point == 0}
+            className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold transition-all duration-200 hover:shadow-lg"
           >
-            prev
+            ← Prev
           </button>
 
-          <span className="text-blue-600 font-bold bg-white">{point + 1}</span>
+          <span className="text-white font-bold px-4 py-2 bg-gray-700 rounded-lg min-w-[60px] text-center">{point + 1}</span>
 
           <button
             onClick={point < code.length - 1 ? () => setPoint(point + 1) : null}
-            className="px-3 py-1 m-1 rounded bg-blue-600 text-white"
+            disabled={point >= code.length - 1}
+            className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold transition-all duration-200 hover:shadow-lg"
           >
-            next
+            Next →
           </button>
-        {/* Done Button */}
-     
         </div>
 
       </div>
