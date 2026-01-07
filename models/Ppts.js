@@ -6,8 +6,8 @@ const PptsSchema = new mongoose.Schema({
     required: true,
   },
   titles:{
-    type: Array,
-    default: [],
+    type: String,
+    default: "untitled",
   }
   , 
   ppt_History: {

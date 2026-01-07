@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PPT-GenX",
+  title: "Pptgen",
   description: "Transform your ideas into stunning presentations with AI - Create professional PPTs in an instant",
 };
 

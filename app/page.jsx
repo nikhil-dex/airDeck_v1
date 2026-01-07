@@ -4,6 +4,7 @@ import {useSession} from "next-auth/react"
 import { useEffect, useRef, useState } from "react"
 import Navbar from "@/components/Header/navbar";
 import { Save } from "lucide-react";
+import Link from "next/link";
 
 
 export default function Home() {
@@ -14,6 +15,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [credit, setCredit] = useState(session?.user?.credit || 0);
+  const [code, setCode] = useState([]);
+const [point, setPoint] = useState(0);
 
    useEffect(() => {
     if (session === null) {
@@ -73,6 +76,28 @@ const sendRequest = async () => {
   setLoading(false);
 };
 
+const IsPpt = ()=>{
+  if(localStorage.getItem("pptPages") ? true : false){
+    return (
+      
+ 
+              <div className="text-center mb-8">
+    <Link href="/exportDetails" className="">
+  <h1 className="text-4xl font-extrabold mb-3 bg-gradient-to-r from-black via-purple-900 to-fuchsia-600 bg-clip-text text-transparent">
+          Last generated presentation is ready for export! Click here to download.
+  </h1>
+        </Link>
+  
+</div>
+        
+ 
+    )
+   
+   
+ 
+  }
+}
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
@@ -90,11 +115,11 @@ const sendRequest = async () => {
 
 
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <label className="block text-sm font-semibold text-gray-700 mb-3">
+          <label className="block text-sm font-semibold text-black mb-3">
             Describe your presentation
           </label>
           <textarea
-            className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none resize-none"
+            className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-200 text-black transition-all outline-none resize-none"
             rows="8"
             onChange={(e) => setPrompt(e.target.value)}
             value={prompt}
@@ -122,6 +147,14 @@ const sendRequest = async () => {
             )}
           </button>
         </div>
+         <div className="text-center mb-8">
+  <h1 className="text-4xl font-extrabold mt-3 bg-gradient-to-r from-black via-purple-900 to-fuchsia-600 bg-clip-text text-transparent">
+
+         <IsPpt/>
+               
+  </h1>
+  
+</div>
 
         {response.length > 0 && (
           <div className="mt-8 bg-white rounded-2xl shadow-xl p-8 border border-gray-100">

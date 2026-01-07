@@ -6,19 +6,20 @@ import Ppts from "@/models/Ppts";
 export async function POST(req){
     try{
         await dbConnect();
-        const {code, user} = await req.json();
+        const {title,code,user} = await req.json();
         const findUser = await User.findOne({_id: user});
         if(!findUser){
             return Response.json({error: "User not found"}, {status: 404});
         }
         const newPpt = await Ppts.create({
             userid: user,
-            titles: ["untitled"],
+            titles: title,
             ppt_History: [code],
         });
         
         findUser.ppt_History.push(newPpt._id);
         await findUser.save();
+        
         return Response.json({message: "PPT saved successfully"}, {status: 200});
         
 
@@ -30,3 +31,21 @@ export async function POST(req){
     );
     }
 }
+
+// userid: {
+//     type: String,
+//     required: true,
+//   },
+//   titles:{
+//     type: Array,
+//     default: [],
+//   }
+//   , 
+//   ppt_History: {
+//     type: Array,
+//     default: [],
+//   }, 
+//   createdAt: {
+//     type: Date,
+//     default: Date.now
+//   }
