@@ -35,3 +35,10 @@ input:focus::placeholder,
 textarea:focus::placeholder {
   color: #6b7280;
 }
+
+.gradient-heading {
+  background: linear-gradient(135deg, #1a1a1a 0%, #6b21a8 50%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

@@ -209,7 +209,7 @@ const handleExport = useCallback(async () => {
 
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+            <h1 className="text-4xl font-bold gradient-heading mb-3">
               Export Your Presentation
             </h1>
             <p className="text-lg text-gray-600">

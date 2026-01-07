@@ -79,8 +79,8 @@ const sendRequest = async () => {
       <Navbar credit={credit} />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
-            AI-Powered Presentation Generator
+          <h1 className="text-4xl font-bold gradient-heading mb-3">
+            PPT-GenX
           </h1>
           <p className="text-lg text-gray-600">
             Transform your ideas into stunning HTML presentations with AI

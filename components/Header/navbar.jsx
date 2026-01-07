@@ -52,7 +52,7 @@ const Navbar = ({ onToggleSidebar, isSidebarCollapsed }) => {
           )}
         </button> */}
         
-        <h1 className="text-lg sm:text-xl font-semibold gradient-text">ppt-genx</h1>
+        <h1 className="text-lg sm:text-xl font-semibold gradient-heading">PPT-GenX</h1>
       </div>
       
       {/* Desktop Navigation */}

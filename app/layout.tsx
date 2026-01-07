@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ppt_genx",
-  description: "got no time to create ppt? let ai do it for you in an instant !",
+  title: "PPT-GenX",
+  description: "Transform your ideas into stunning presentations with AI - Create professional PPTs in an instant",
 };
 
 export default function RootLayout({
