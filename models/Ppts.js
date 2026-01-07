@@ -1,11 +1,9 @@
-import { create } from "domain";
 import mongoose from "mongoose";
 
 const PptsSchema = new mongoose.Schema({
   userid: {
     type: String,
     required: true,
-    unique: true,
   },
   titles:{
     type: Array,

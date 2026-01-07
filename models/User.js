@@ -32,8 +32,9 @@ const userSchema = new mongoose.Schema({
     default: 5,
   },
   ppt_History: {
-    type: [String],
+    type: [mongoose.Schema.Types.ObjectId],
     default: [],
+    ref: "Ppts",
   },
   createdAt: {
     type: Date,

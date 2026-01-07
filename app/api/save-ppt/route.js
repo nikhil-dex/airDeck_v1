@@ -13,8 +13,8 @@ export async function POST(req){
         }
         const newPpt = await Ppts.create({
             userid: user,
-            titles: "untitled",
-            ppt_History: {code},
+            titles: ["untitled"],
+            ppt_History: [code],
         });
         
         findUser.ppt_History.push(newPpt._id);
