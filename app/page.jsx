@@ -78,14 +78,16 @@ const sendRequest = async () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
       <Navbar credit={credit} />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold gradient-heading mb-3">
-            PPT-GenX
-          </h1>
-          <p className="text-lg text-gray-600">
-            Transform your ideas into stunning HTML presentations with AI
-          </p>
-        </div>
+      <div className="text-center mb-8">
+  <h1 className="text-4xl font-extrabold mb-3 bg-[linear-gradient(90deg,#000,#7c3aed,#000)] bg-[length:200%_200%] animate-gradient bg-clip-text text-transparent">
+
+    PPTgen
+  </h1>
+  <p className="text-lg text-gray-600">
+    Transform your ideas into stunning HTML presentations with AI
+  </p>
+</div>
+
 
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <label className="block text-sm font-semibold text-gray-700 mb-3">

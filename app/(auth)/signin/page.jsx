@@ -41,9 +41,13 @@ export default function SignInPage() {
         {/* Left Side - Hero Content */}
         <div className="text-center lg:text-left space-y-6 sm:space-y-8 animate-fade-in-up">
           <div className="space-y-3 sm:space-y-4">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold gradient-heading">
-              PPT-GenX
-            </h1>
+              <div className="text-center mb-8">
+  <h1 className="text-4xl font-extrabold mb-3 bg-[linear-gradient(90deg,#000,#7c3aed,#000)] bg-[length:200%_200%] animate-gradient bg-clip-text text-transparent">
+
+    PPTgen
+  </h1>
+ 
+</div>
             <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-lg mx-auto">
               AI PPT Generator - Transform your ideas into stunning presentations with the power of AI
             </p>

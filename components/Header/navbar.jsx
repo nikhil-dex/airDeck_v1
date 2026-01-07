@@ -52,7 +52,13 @@ const Navbar = ({ onToggleSidebar, isSidebarCollapsed }) => {
           )}
         </button> */}
         
-        <h1 className="text-lg sm:text-xl font-semibold gradient-heading">PPT-GenX</h1>
+         
+  <h1 className="text-4xl font-extrabold mb-3 bg-[linear-gradient(90deg,#000,#7c3aed,#000)] bg-[length:200%_200%] animate-gradient bg-clip-text text-transparent">
+
+    PPTgen
+  </h1>
+ 
+
       </div>
       
       {/* Desktop Navigation */}
