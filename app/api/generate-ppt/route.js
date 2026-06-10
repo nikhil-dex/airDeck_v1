@@ -61,9 +61,42 @@ Return EXACTLY this format:
 /**
  * Sends prompt to Gemini API
  */
+const DEPRECATED_GEMINI_MODELS = new Set([
+  "gemini-2.5-flash-preview-09-2025",
+  "gemini-2.5-flash-preview-09-25",
+  "gemini-2.5-flash-preview-05-20",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+]);
+
+function resolveGeminiModel() {
+  const configuredModel = process.env.GEMINI_MODEL?.trim();
+  const defaultModel = "gemini-2.5-flash";
+
+  if (!configuredModel) {
+    return defaultModel;
+  }
+
+  if (DEPRECATED_GEMINI_MODELS.has(configuredModel)) {
+    console.warn(
+      `GEMINI_MODEL "${configuredModel}" is retired. Falling back to ${defaultModel}.`
+    );
+    return defaultModel;
+  }
+
+  return configuredModel;
+}
+
 async function sendRequestToGemini(updatedPrompt) {
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-  const apiKey = process.env.GEMINI_API_KEY || "";
+  const model = resolveGeminiModel();
+  const apiKey = process.env.GEMINI_API_KEY?.trim() || "";
+
+  if (!apiKey) {
+    throw new Error(
+      "GEMINI_API_KEY is not configured. Add it in Vercel → Settings → Environment Variables."
+    );
+  }
+
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const payload = {
@@ -72,7 +105,6 @@ async function sendRequestToGemini(updatedPrompt) {
         parts: [{ text: updatedPrompt }],
       },
     ],
-    tools: [{ google_search: {} }],
   };
 
   const maxRetries = 5;
@@ -90,13 +122,15 @@ async function sendRequestToGemini(updatedPrompt) {
         return await response.json();
       }
 
+      const errorBody = await response.text();
+
       // Retry if failed
       if (i < maxRetries - 1) {
         await new Promise((resolve) => setTimeout(resolve, delay));
         delay *= 2;
       } else {
         throw new Error(
-          `API failed with status ${response.status} after ${maxRetries} attempts`
+          `API failed with status ${response.status} for model "${model}" after ${maxRetries} attempts. ${errorBody}`
         );
       }
     } catch (error) {
