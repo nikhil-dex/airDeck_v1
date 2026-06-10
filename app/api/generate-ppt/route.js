@@ -40,9 +40,9 @@ Rules:
 6. NO backticks.
 7. NO text outside the JSON array.
 8. DO NOT include Tailwind CDN.
-9. Instead, include this placeholder inside <head>:
+9. USE ONLY CSS ON EACH PAGE
 
-   <style> css </style>
+  
 
 Return EXACTLY this format:
 [
