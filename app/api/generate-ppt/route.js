@@ -1,3 +1,29 @@
+function toErrorMessage(error) {
+  if (!error) return "Something went wrong.";
+  if (typeof error === "string") return error;
+  if (error instanceof Error) return error.message || "Something went wrong.";
+  if (typeof error === "object" && error.message) return String(error.message);
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return "Something went wrong.";
+  }
+}
+
+function formatGeminiApiError(status, model, errorBody) {
+  try {
+    const parsed = JSON.parse(errorBody);
+    const apiMessage = parsed?.error?.message;
+    if (apiMessage) {
+      return `Gemini API error (${status}) for model "${model}": ${apiMessage}`;
+    }
+  } catch {
+    // errorBody is plain text
+  }
+
+  return `Gemini API error (${status}) for model "${model}": ${errorBody}`;
+}
+
 export async function POST(req) {
     try {
         const { prompt } = await req.json();
@@ -51,7 +77,7 @@ Return EXACTLY this format:
     return Response.json({ result: pages });
   } catch (error) {
     return Response.json(
-      { error: error.message || "Something went wrong." },
+      { error: toErrorMessage(error) },
       { status: 500 }
     );
   }
@@ -130,7 +156,7 @@ async function sendRequestToGemini(updatedPrompt) {
         delay *= 2;
       } else {
         throw new Error(
-          `API failed with status ${response.status} for model "${model}" after ${maxRetries} attempts. ${errorBody}`
+          formatGeminiApiError(response.status, model, errorBody)
         );
       }
     } catch (error) {
@@ -138,7 +164,7 @@ async function sendRequestToGemini(updatedPrompt) {
         await new Promise((resolve) => setTimeout(resolve, delay));
         delay *= 2;
       } else {
-        throw new Error("Gemini API connection error: " + error.message);
+        throw new Error(toErrorMessage(error));
       }
     }
   }

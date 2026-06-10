@@ -11,7 +11,7 @@ export default function Home() {
   const router = useRouter();
   const { data: session } = useSession();
   const [prompt, setPrompt] = useState("");
-  const [response, setResponse] = useState([]);
+  const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [credit, setCredit] = useState(session?.user?.credit || 0);
@@ -44,10 +44,26 @@ const [point, setPoint] = useState(0);
     )
   }
 
+const formatApiError = (data) => {
+  if (!data) return "Unknown error";
+
+  if (typeof data.error === "string") return data.error;
+  if (typeof data.error === "object" && data.error?.message) {
+    return String(data.error.message);
+  }
+  if (typeof data.message === "string") return data.message;
+
+  try {
+    return JSON.stringify(data.error ?? data);
+  } catch {
+    return "Something went wrong.";
+  }
+};
+
 const sendRequest = async () => {
   console.log("Sending request with prompt:", prompt);
   setLoading(true);
-  setResponse([]);
+  setResponse("");
 
   try {
     const res = await fetch("/api/generate-ppt", {
@@ -58,22 +74,24 @@ const sendRequest = async () => {
 
     const data = await res.json();
 
-    if (data.error) {
-      setResponse([`❌ Error: ${data.error}`]);
-      // localStorage.setItem("pptPages", JSON.stringify([`❌ Error: ${data.error}`]));
-    } else {
-      setResponse(data.result);
-      localStorage.setItem("pptPages", JSON.stringify(data.result)); // ✔ FIXED
-      router.push("/code-ide");
+    if (!res.ok || data.error) {
+      setResponse(`❌ Error: ${formatApiError(data)}`);
+      return;
     }
 
+    if (!Array.isArray(data.result) || data.result.length === 0) {
+      setResponse("❌ Error: The model returned no slides. Try a more specific prompt.");
+      return;
+    }
+
+    localStorage.setItem("pptPages", JSON.stringify(data.result));
+    router.push("/code-ide");
     console.log("Received pages:", data.result);
   } catch (err) {
-    setResponse([`Network error: ${err.message}`]);
-    // localStorage.setItem("pptPages", JSON.stringify([`Network error: ${err.message}`]));
+    setResponse(`❌ Network error: ${err?.message || "Request failed"}`);
+  } finally {
+    setLoading(false);
   }
-
-  setLoading(false);
 };
 
 const IsPpt = ()=>{
@@ -156,10 +174,12 @@ const IsPpt = ()=>{
   
 </div>
 
-        {response.length > 0 && (
+        {response && (
           <div className="mt-8 bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Output</h2>
-            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200" dangerouslySetInnerHTML={{ __html: response }}></div>
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 text-sm text-red-700 whitespace-pre-wrap break-words">
+              {response}
+            </div>
           </div>
         )}
       </div>
