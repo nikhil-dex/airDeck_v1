@@ -42,7 +42,7 @@ Rules:
 8. DO NOT include Tailwind CDN.
 9. Instead, include this placeholder inside <head>:
 
-   <style>__TAILWIND_CSS__</style>
+   <style>__TAILWIND_CSS__ or css </style>
 
 Return EXACTLY this format:
 [
