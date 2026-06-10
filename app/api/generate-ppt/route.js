@@ -62,7 +62,7 @@ Return EXACTLY this format:
  * Sends prompt to Gemini API
  */
 async function sendRequestToGemini(updatedPrompt) {
-  const model = "gemini-2.5-flash-preview-09-2025";
+  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
   const apiKey = process.env.GEMINI_API_KEY || "";
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
