@@ -41,11 +41,16 @@ export async function GET(req, { params }) {
   }
 }
 
+const MAX_SLIDES = 50;
+const MAX_SLIDE_LENGTH = 200_000; // chars of HTML per slide
+
+// Update a deck's title and/or slides (used by rename and by re-editing a
+// saved deck). The deck keeps its id, so existing share links stay valid.
 export async function PATCH(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return Response.json({ error: "Sign in to rename presentations." }, { status: 401 });
+      return Response.json({ error: "Sign in to update presentations." }, { status: 401 });
     }
 
     const { id } = await params;
@@ -53,13 +58,32 @@ export async function PATCH(req, { params }) {
       return Response.json({ error: "Presentation not found." }, { status: 404 });
     }
 
-    const { title } = await req.json();
-    const newTitle = typeof title === "string" ? title.trim() : "";
-    if (!newTitle || newTitle.length > 120) {
-      return Response.json(
-        { error: "Title must be 1-120 characters." },
-        { status: 400 }
-      );
+    const { title, code } = await req.json();
+
+    const updates = {};
+
+    if (title !== undefined) {
+      const newTitle = typeof title === "string" ? title.trim() : "";
+      if (!newTitle || newTitle.length > 120) {
+        return Response.json({ error: "Title must be 1-120 characters." }, { status: 400 });
+      }
+      updates.titles = newTitle;
+    }
+
+    if (code !== undefined) {
+      if (
+        !Array.isArray(code) ||
+        code.length === 0 ||
+        code.length > MAX_SLIDES ||
+        !code.every((s) => typeof s === "string" && s.length <= MAX_SLIDE_LENGTH)
+      ) {
+        return Response.json({ error: "Invalid slides data." }, { status: 400 });
+      }
+      updates.ppt_History = code;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return Response.json({ error: "Nothing to update." }, { status: 400 });
     }
 
     await dbConnect();
@@ -75,12 +99,15 @@ export async function PATCH(req, { params }) {
     }
 
     if (ppt.userid !== String(user._id)) {
-      return Response.json({ error: "You can only rename your own presentations." }, { status: 403 });
+      return Response.json({ error: "You can only update your own presentations." }, { status: 403 });
     }
 
-    await Ppts.updateOne({ _id: id }, { titles: newTitle });
+    await Ppts.updateOne({ _id: id }, updates);
 
-    return Response.json({ message: "Presentation renamed.", title: newTitle });
+    return Response.json({
+      message: updates.ppt_History ? "Presentation updated." : "Presentation renamed.",
+      title: updates.titles,
+    });
   } catch (error) {
     return Response.json(
       { error: error.message || "Something went wrong." },

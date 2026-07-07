@@ -93,6 +93,10 @@ const sendRequest = async () => {
     }
 
     localStorage.setItem("pptPages", JSON.stringify(data.result));
+    // Fresh generation — make sure saving creates a new deck rather than
+    // overwriting one that was being edited earlier.
+    localStorage.removeItem("pptEditingId");
+    localStorage.removeItem("pptEditingTitle");
     router.push("/code-ide");
     console.log("Received pages:", data.result);
   } catch (err) {
