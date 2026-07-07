@@ -5,6 +5,7 @@ import Navbar from "../../components/Header/navbar"
 import { Download, Presentation, FileCode } from 'lucide-react';
 import { downloadAsPptx, downloadHtmlFile } from "@/lib/exporters";
 import SlideFrame from "@/components/SlideFrame";
+import AuroraBackground from "@/components/AuroraBackground";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react"
 
@@ -132,7 +133,7 @@ export default function ExportDetails() {
 
   const buttonStyle = {
     idle: 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:ring-green-400',
-    loading: 'bg-gray-400 cursor-not-allowed',
+    loading: 'bg-white/10 text-gray-400 cursor-not-allowed',
     success: 'bg-green-500 hover:bg-green-600 focus:ring-green-400',
     error: 'bg-red-500 hover:bg-red-600 focus:ring-red-400',
   }[exportStatus];
@@ -152,23 +153,25 @@ useEffect(() => {
 
 if (status !== "authenticated") {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
+    <div className="min-h-screen flex items-center justify-center bg-[#070709]">
       <div className="text-center">
-        <svg className="animate-spin h-12 w-12 mx-auto mb-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <svg className="animate-spin h-12 w-12 mx-auto mb-4 text-[#5eadff]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
-        <p className="text-gray-600 font-medium">Loading...</p>
+        <p className="text-gray-400 font-medium">Loading...</p>
       </div>
     </div>
   )
 }
 return (
-  <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
+  <div className="min-h-screen bg-[#070709]">
+    <AuroraBackground />
+    <div className="page-content">
     <Navbar />
     <div className="container mx-auto px-4 py-8">
       <button
-        className="mb-6 px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+        className="mb-6 px-5 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-semibold transition-all duration-200 flex items-center gap-2"
         onClick={() => router.back()}
       >
         ← Go Back
@@ -176,19 +179,19 @@ return (
 
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-extrabold mb-3 bg-gradient-to-r from-black via-purple-900 to-fuchsia-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-extrabold mb-3 text-gradient">
             Export Your Presentation
           </h1>
-          <p className="text-lg text-gray-600">
-            Add a title and download your presentation as PowerPoint
+          <p className="text-lg text-gray-400">
+            Add a title, share it as a link, or download it
           </p>
         </div>
 
 
 
         <form onSubmit={(e) => { e.preventDefault(); handleExport(); }} className="space-y-8">
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-            <label htmlFor="title" className="block text-lg font-semibold text-gray-900 mb-3">
+          <div className="glass-card p-8">
+            <label htmlFor="title" className="block text-lg font-semibold text-gray-100 mb-3">
               Presentation Title
             </label>
             <input
@@ -199,15 +202,15 @@ return (
               placeholder="Enter your presentation title..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="block w-full px-5 py-4 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg text-black transition-all outline-none"
+              className="block w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl focus:ring-1 focus:ring-[#5eadff]/50 focus:border-[#5eadff] text-lg text-gray-100 transition-all outline-none"
               disabled={isDisabled}
             />
             <p className="mt-3 text-sm text-gray-500">This will be used as your filename and first slide title</p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Preview</h3>
-            <div className="aspect-video w-full bg-gray-100 rounded-lg overflow-hidden shadow-inner">
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-gray-100 mb-4">Preview</h3>
+            <div className="aspect-video w-full bg-black/40 rounded-lg overflow-hidden">
               <SlideFrame html={code[0]} className="w-full h-full" />
             </div>
           </div>
@@ -243,7 +246,7 @@ return (
               type="button"
               onClick={GenLink}
               disabled={isDisabled || saveStatus === "saving"}
-              className="px-8 py-4 flex justify-center items-center gap-3 text-lg font-semibold rounded-xl shadow-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white transition-all duration-200 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300"
+              className="btn-accent px-8 py-4 flex justify-center items-center gap-3 text-lg rounded-xl transform hover:scale-105 transition-all duration-200 focus:outline-none"
             >
               <Presentation className="w-6 h-6" />
               <span>
@@ -253,8 +256,8 @@ return (
           </div>
 
           {shareLink && (
-            <div className="bg-white rounded-2xl shadow-xl p-6 border border-green-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+            <div className="glass-card p-6 border-[#b3ffc8]/25">
+              <h3 className="text-lg font-semibold text-gray-100 mb-3">
                 🎉 {editingId ? "Deck updated — same link, new content" : "Your presentation is live"}
               </h3>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -263,12 +266,12 @@ return (
                   readOnly
                   value={shareLink}
                   onFocus={(e) => e.target.select()}
-                  className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-700 bg-gray-50 outline-none"
+                  className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-gray-300 outline-none"
                 />
                 <button
                   type="button"
                   onClick={copyShareLink}
-                  className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors"
+                  className="btn-accent px-6 py-3 rounded-xl"
                 >
                   {copied ? "Copied!" : "Copy Link"}
                 </button>
@@ -276,7 +279,7 @@ return (
                   href={shareLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3 rounded-xl bg-gray-700 hover:bg-gray-800 text-white font-semibold transition-colors text-center"
+                  className="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 font-semibold transition-colors text-center"
                 >
                   Open
                 </a>
@@ -288,12 +291,13 @@ return (
           )}
 
           {saveStatus === "error" && saveError && (
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700 font-medium">
+            <div className="bg-red-400/5 border border-red-400/20 rounded-2xl p-4 text-red-400 font-medium">
               {saveError}
             </div>
           )}
         </form>
       </div>
+    </div>
     </div>
   </div>
 );

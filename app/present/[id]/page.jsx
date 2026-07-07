@@ -91,7 +91,7 @@ export default function PresentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-[#070709]">
         <p className="text-gray-300 font-medium animate-pulse">Loading presentation...</p>
       </div>
     );
@@ -99,7 +99,7 @@ export default function PresentPage() {
 
   if (error || slides.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-[#070709]">
         <div className="text-center">
           <p className="text-2xl text-white font-bold mb-2">Presentation not found</p>
           <p className="text-gray-400">{error || "This deck has no slides."}</p>
@@ -109,7 +109,7 @@ export default function PresentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-[#070709] flex flex-col">
       <div className="flex items-center justify-between px-6 py-3">
         <h1 className="text-white font-semibold truncate">{title}</h1>
         <div className="flex items-center gap-3">

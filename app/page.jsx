@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import {useSession} from "next-auth/react"
 import { useEffect, useRef, useState } from "react"
 import Navbar from "@/components/Header/navbar";
+import AuroraBackground from "@/components/AuroraBackground";
 import { Save } from "lucide-react";
 import Link from "next/link";
 
@@ -29,13 +30,13 @@ export default function Home() {
 
   if (status !== "authenticated") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#070709]">
         <div className="text-center">
-          <svg className="animate-spin h-12 w-12 mx-auto mb-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin h-12 w-12 mx-auto mb-4 text-[#5eadff]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <p className="text-gray-600 font-medium">Loading...</p>
+          <p className="text-gray-400 font-medium">Loading...</p>
         </div>
       </div>
     )
@@ -108,31 +109,33 @@ const sendRequest = async () => {
 };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
+    <div className="min-h-screen bg-[#070709]">
+      <AuroraBackground />
+      <div className="page-content">
       <Navbar />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="text-center mb-8">
-  <h1 className="text-4xl font-extrabold mb-3 bg-[linear-gradient(90deg,#000,#7c3aed,#000)] bg-[length:200%_200%] animate-gradient bg-clip-text text-transparent">
-
-    PPTgen
+      <div className="text-center mb-10 mt-6">
+  <span className="tag">AI × Presentations as code</span>
+  <h1 className="text-5xl font-extrabold mt-5 mb-3 text-gradient">
+    Ideas in. Decks out.
   </h1>
-  <p className="text-lg text-gray-600">
-    Transform your ideas into stunning HTML presentations with AI
+  <p className="text-lg text-gray-400">
+    AI-designed HTML presentations you can edit like code
   </p>
 </div>
 
 
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="glass-card p-8">
           <div className="flex items-center justify-between mb-3">
-            <label className="block text-sm font-semibold text-black">
+            <label className="block text-sm font-semibold text-gray-200">
               Describe your presentation
             </label>
-            <span className={`text-sm font-semibold px-3 py-1 rounded-full ${credit > 0 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
+            <span className={`text-sm font-semibold px-3 py-1 rounded-full border ${credit > 0 ? "border-[#b3ffc8]/30 text-[#b3ffc8] bg-[#b3ffc8]/5" : "border-red-400/30 text-red-400 bg-red-400/5"}`}>
               {credit} credit{credit === 1 ? "" : "s"} left
             </span>
           </div>
           <textarea
-            className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-200 text-black transition-all outline-none resize-none"
+            className="w-full p-4 bg-white/5 border border-white/10 rounded-xl focus:border-[#5eadff] focus:ring-1 focus:ring-[#5eadff]/50 text-gray-100 transition-all outline-none resize-none"
             rows="8"
             onChange={(e) => setPrompt(e.target.value)}
             value={prompt}
@@ -142,11 +145,11 @@ const sendRequest = async () => {
           <button
             onClick={sendRequest}
             disabled={loading || !prompt.trim()}
-            className="mt-6 w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="mt-6 w-full btn-accent px-8 py-4 rounded-xl text-lg flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
@@ -164,21 +167,22 @@ const sendRequest = async () => {
           <div className="text-center mt-8">
             <Link
               href="/exportDetails"
-              className="text-2xl font-extrabold bg-gradient-to-r from-black via-purple-900 to-fuchsia-600 bg-clip-text text-transparent hover:opacity-75 transition-opacity"
+              className="text-xl font-bold text-gradient hover:opacity-75 transition-opacity"
             >
-              Last generated presentation is ready for export! Click here to download.
+              Last generated presentation is ready for export — click here →
             </Link>
           </div>
         )}
 
         {response && (
-          <div className="mt-8 bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Output</h2>
-            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 text-sm text-red-700 whitespace-pre-wrap break-words">
+          <div className="mt-8 glass-card p-8">
+            <h2 className="text-2xl font-bold text-gray-100 mb-4">Output</h2>
+            <div className="p-4 bg-red-400/5 rounded-xl border border-red-400/20 text-sm text-red-400 whitespace-pre-wrap break-words">
               {response}
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
