@@ -23,7 +23,7 @@ export const authOptions = {
   ],
 
   callbacks: {
-    async jwt({ token, user, account, profile }) {
+    async jwt({ token, user, profile }) {
       if (user?.email) {
         try {
           await dbConnect();

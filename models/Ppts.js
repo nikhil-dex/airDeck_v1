@@ -13,7 +13,12 @@ const PptsSchema = new mongoose.Schema({
   ppt_History: {
     type: Array,
     default: [],
-  }, 
+  },
+  // Emails of users this deck is shared with (it shows up in their My Decks).
+  sharedWith: {
+    type: [String],
+    default: [],
+  },
   createdAt: {
     type: Date,
     default: Date.now

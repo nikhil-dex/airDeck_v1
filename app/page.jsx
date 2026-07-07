@@ -9,28 +9,25 @@ import Link from "next/link";
 
 export default function Home() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [credit, setCredit] = useState(session?.user?.credit || 0);
-  const [code, setCode] = useState([]);
-const [point, setPoint] = useState(0);
+  // Balance returned by the generate API; falls back to the session value.
+  const [creditLeft, setCreditLeft] = useState(null);
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef(null);
+  const [hasSavedDeck] = useState(() =>
+    typeof window !== "undefined" && Boolean(localStorage.getItem("pptPages"))
+  );
 
-   useEffect(() => {
-    if (session === null) {
-      router.push('/signin');
-    } else if (session !== undefined) {
-      setIsLoading(false);
-      // Update credit when session loads
-      if (session?.user?.credit !== undefined) {
-        setCredit(session.user.credit);
-      }
-    }
-  }, [session, router]);
+  const credit = creditLeft ?? session?.user?.credit ?? 0;
 
-  if(isLoading){
+  useEffect(() => {
+    if (status === "unauthenticated") router.push('/signin');
+  }, [status, router]);
+
+  if (status !== "authenticated") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
         <div className="text-center">
@@ -65,6 +62,13 @@ const sendRequest = async () => {
   setLoading(true);
   setResponse("");
 
+  const startTime = Date.now();
+  setElapsed(0);
+  timerRef.current = setInterval(() => {
+    setElapsed((Date.now() - startTime) / 1000);
+  }, 100);
+  const took = () => `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
+
   try {
     const res = await fetch("/api/generate-ppt", {
       method: "POST",
@@ -75,51 +79,33 @@ const sendRequest = async () => {
     const data = await res.json();
 
     if (!res.ok || data.error) {
-      setResponse(`❌ Error: ${formatApiError(data)}`);
+      setResponse(`❌ Error: ${formatApiError(data)} (after ${took()})`);
       return;
     }
 
     if (!Array.isArray(data.result) || data.result.length === 0) {
-      setResponse("❌ Error: The model returned no slides. Try a more specific prompt.");
+      setResponse(`❌ Error: The model returned no slides. Try a more specific prompt. (after ${took()})`);
       return;
+    }
+
+    if (typeof data.credit === "number") {
+      setCreditLeft(data.credit);
     }
 
     localStorage.setItem("pptPages", JSON.stringify(data.result));
     router.push("/code-ide");
     console.log("Received pages:", data.result);
   } catch (err) {
-    setResponse(`❌ Network error: ${err?.message || "Request failed"}`);
+    setResponse(`❌ Network error: ${err?.message || "Request failed"} (after ${took()})`);
   } finally {
+    clearInterval(timerRef.current);
     setLoading(false);
   }
 };
 
-const IsPpt = ()=>{
-  if(localStorage.getItem("pptPages") ? true : false){
-    return (
-      
- 
-              <div className="text-center mb-8">
-    <Link href="/exportDetails" className="">
-  <h1 className="text-4xl font-extrabold mb-3 bg-gradient-to-r from-black via-purple-900 to-fuchsia-600 bg-clip-text text-transparent">
-          Last generated presentation is ready for export! Click here to download.
-  </h1>
-        </Link>
-  
-</div>
-        
- 
-    )
-   
-   
- 
-  }
-}
-
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
-      <Navbar credit={credit} />
+      <Navbar />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="text-center mb-8">
   <h1 className="text-4xl font-extrabold mb-3 bg-[linear-gradient(90deg,#000,#7c3aed,#000)] bg-[length:200%_200%] animate-gradient bg-clip-text text-transparent">
@@ -133,9 +119,14 @@ const IsPpt = ()=>{
 
 
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <label className="block text-sm font-semibold text-black mb-3">
-            Describe your presentation
-          </label>
+          <div className="flex items-center justify-between mb-3">
+            <label className="block text-sm font-semibold text-black">
+              Describe your presentation
+            </label>
+            <span className={`text-sm font-semibold px-3 py-1 rounded-full ${credit > 0 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
+              {credit} credit{credit === 1 ? "" : "s"} left
+            </span>
+          </div>
           <textarea
             className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-200 text-black transition-all outline-none resize-none"
             rows="8"
@@ -155,7 +146,7 @@ const IsPpt = ()=>{
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span>Generating Your Presentation...</span>
+                <span>Generating Your Presentation... {elapsed.toFixed(1)}s</span>
               </>
             ) : (
               <>
@@ -165,14 +156,16 @@ const IsPpt = ()=>{
             )}
           </button>
         </div>
-         <div className="text-center mb-8">
-  <h1 className="text-4xl font-extrabold mt-3 bg-gradient-to-r from-black via-purple-900 to-fuchsia-600 bg-clip-text text-transparent">
-
-         <IsPpt/>
-               
-  </h1>
-  
-</div>
+        {hasSavedDeck && (
+          <div className="text-center mt-8">
+            <Link
+              href="/exportDetails"
+              className="text-2xl font-extrabold bg-gradient-to-r from-black via-purple-900 to-fuchsia-600 bg-clip-text text-transparent hover:opacity-75 transition-opacity"
+            >
+              Last generated presentation is ready for export! Click here to download.
+            </Link>
+          </div>
+        )}
 
         {response && (
           <div className="mt-8 bg-white rounded-2xl shadow-xl p-8 border border-gray-100">

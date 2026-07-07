@@ -1,25 +1,19 @@
 "use client"
 import { signIn, useSession } from "next-auth/react"
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from "react"
-import { Github, Mail, Sparkles, Brain, Shield, Zap, ArrowRight } from "lucide-react"
+import { useEffect } from "react"
+import { Sparkles, Brain, Shield, Zap, ArrowRight } from "lucide-react"
 import { GradientBackground } from '@/components/gradient-background';
 export default function SignInPage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (status === "loading") {
-      setIsLoading(true)
-    } else if (session) {
-      router.push('/')
-    } else {
-      setIsLoading(false)
-    }
-  }, [session, status, router])
+    if (status === "authenticated") router.push('/')
+  }, [status, router])
 
-  if (isLoading) {
+  // Show the spinner while the session resolves or while redirecting away.
+  if (status !== "unauthenticated") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
         <div className="text-center">
@@ -94,15 +88,6 @@ export default function SignInPage() {
                 <span className="font-medium text-gray-900 text-sm sm:text-base">Continue with Google</span>
                 <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
               </button>
-              
-              {/* <button 
-                onClick={() => signIn("github")}
-                className="w-full flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 shadow-lg"
-              >
-                <Github className="w-5 h-5 sm:w-6 sm:h-6" />
-                <span className="font-medium text-sm sm:text-base">Continue with GitHub</span>
-                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-300" />
-              </button> */}
             </div>
 
             <div className="mt-8 text-center">
