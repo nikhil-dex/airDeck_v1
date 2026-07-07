@@ -12,12 +12,19 @@ import { useSession } from "next-auth/react"
 export default function ExportDetails() {
   const router = useRouter();
   const { status } = useSession();
-  // Slides arrive from the editor via localStorage.
+  // Slides arrive from the editor via localStorage. When an existing deck
+  // was opened via "Edit deck", pptEditingId is set and saving updates it
+  // instead of creating a new one.
   const [code] = useState(() => {
     if (typeof window === "undefined") return [];
     return JSON.parse(localStorage.getItem("pptPages")) || [];
   });
-  const [title, setTitle] = useState('');
+  const [editingId] = useState(() =>
+    typeof window === "undefined" ? "" : localStorage.getItem("pptEditingId") || ""
+  );
+  const [title, setTitle] = useState(() =>
+    typeof window === "undefined" ? "" : localStorage.getItem("pptEditingTitle") || ""
+  );
   const [exportStatus, setExportStatus] = useState("");
   const [shareLink, setShareLink] = useState("");
   const [saveStatus, setSaveStatus] = useState("idle"); // idle | saving | error
@@ -37,11 +44,19 @@ export default function ExportDetails() {
       setSaveError("");
       setShareLink("");
 
-      const response = await fetch("/api/save-ppt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, code }),
-      });
+      // Editing an existing deck updates it in place (same id, same link);
+      // otherwise a new deck is created.
+      const response = editingId
+        ? await fetch(`/api/ppt/${editingId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, code }),
+          })
+        : await fetch("/api/save-ppt", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, code }),
+          });
       const data = await response.json();
 
       if (!response.ok || data.error) {
@@ -50,7 +65,7 @@ export default function ExportDetails() {
         return;
       }
 
-      setShareLink(`${window.location.origin}/present/${data.id}`);
+      setShareLink(`${window.location.origin}/present/${editingId || data.id}`);
       setSaveStatus("idle");
     } catch (err) {
       console.error("Error generating link:", err);
@@ -231,14 +246,16 @@ return (
               className="px-8 py-4 flex justify-center items-center gap-3 text-lg font-semibold rounded-xl shadow-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white transition-all duration-200 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300"
             >
               <Presentation className="w-6 h-6" />
-              <span>{saveStatus === "saving" ? "Saving..." : "Generate Link"}</span>
+              <span>
+                {saveStatus === "saving" ? "Saving..." : editingId ? "Update Deck" : "Generate Link"}
+              </span>
             </button>
           </div>
 
           {shareLink && (
             <div className="bg-white rounded-2xl shadow-xl p-6 border border-green-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                🎉 Your presentation is live
+                🎉 {editingId ? "Deck updated — same link, new content" : "Your presentation is live"}
               </h3>
               <div className="flex flex-col sm:flex-row gap-3">
                 <input

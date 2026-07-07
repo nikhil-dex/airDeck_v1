@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/Header/navbar";
-import { Presentation, ExternalLink, Link as LinkIcon, Plus, Download, FileCode, Trash2, MoreVertical, Pencil, Check, X, UserPlus, Users } from "lucide-react";
+import { Presentation, ExternalLink, Link as LinkIcon, Plus, Download, FileCode, Trash2, MoreVertical, Pencil, Check, X, UserPlus, Users, Code } from "lucide-react";
 import { downloadAsPptx, downloadHtmlFile } from "@/lib/exporters";
 
 export default function PresentationsPage() {
@@ -85,6 +85,31 @@ export default function PresentationsPage() {
     } catch (err) {
       setError(err.message || "Failed to delete.");
     } finally {
+      setBusyKey("");
+    }
+  };
+
+  // Load a saved deck back into the code editor. The editor and export page
+  // exchange slides via localStorage; pptEditingId makes saving update this
+  // deck instead of creating a new one.
+  const startEdit = async (ppt) => {
+    if (busyKey) return;
+    setBusyKey(`${ppt.id}:edit`);
+    setError("");
+
+    try {
+      const res = await fetch(`/api/ppt/${ppt.id}`);
+      const data = await res.json();
+      if (!res.ok || data.error || !Array.isArray(data.slides) || data.slides.length === 0) {
+        throw new Error(data.error || "This deck has no slides to edit.");
+      }
+
+      localStorage.setItem("pptPages", JSON.stringify(data.slides));
+      localStorage.setItem("pptEditingId", ppt.id);
+      localStorage.setItem("pptEditingTitle", ppt.title || "");
+      router.push("/code-ide");
+    } catch (err) {
+      setError(err.message || "Failed to open deck.");
       setBusyKey("");
     }
   };
@@ -352,6 +377,9 @@ export default function PresentationsPage() {
                   {busyKey === `${ppt.id}:unshare` && (
                     <span className="ml-2 text-red-600 font-medium">Removing...</span>
                   )}
+                  {busyKey === `${ppt.id}:edit` && (
+                    <span className="ml-2 text-blue-600 font-medium">Opening editor...</span>
+                  )}
                 </p>
               </div>
               <div className="flex gap-2 shrink-0 items-center">
@@ -381,6 +409,12 @@ export default function PresentationsPage() {
                       <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-2">
                         {!ppt.shared && (
                           <>
+                            <button
+                              onClick={() => { setMenuOpenId(""); startEdit(ppt); }}
+                              className="w-full px-4 py-2.5 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                            >
+                              <Code className="w-4 h-4 text-gray-500" /> Edit deck
+                            </button>
                             <button
                               onClick={() => { setMenuOpenId(""); startRename(ppt); }}
                               className="w-full px-4 py-2.5 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
