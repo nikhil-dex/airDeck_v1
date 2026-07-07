@@ -53,43 +53,43 @@ const Navbar = ({ onToggleSidebar }) => {
   }, [isMobileMenuOpen]);
 
   return (
-    <header className="flex items-center justify-between bg-white/80 backdrop-blur-sm shadow-lg px-4 sm:px-6 py-3 border-b border-white/20 relative z-50">
+    <header className="flex items-center justify-between bg-black/40 backdrop-blur-xl px-4 sm:px-6 py-3 border-b border-white/10 relative z-50">
       <div className="flex items-center gap-3">
         {onToggleSidebar && (
           <button
             onClick={onToggleSidebar}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="md:hidden p-2 rounded-lg hover:bg-white/10 text-gray-200 transition-colors"
           >
             <Menu className="w-5 h-5" />
           </button>
         )}
 
-        <h1 className="text-4xl font-extrabold mb-3 bg-[linear-gradient(90deg,#000,#7c3aed,#000)] bg-[length:200%_200%] animate-gradient bg-clip-text text-transparent">
+        <Link href="/" className="text-3xl font-extrabold tracking-tight glitch" data-text="PPTgen">
           PPTgen
-        </h1>
+        </Link>
       </div>
 
       {/* Desktop Navigation */}
-      <nav className="hidden md:flex items-center gap-3 lg:gap-6 text-gray-700">
-        <Link href="/" className="hover:text-blue-600 flex items-center gap-1 transition-colors">
+      <nav className="hidden md:flex items-center gap-3 lg:gap-6 text-gray-300">
+        <Link href="/" className="hover:text-[#5eadff] flex items-center gap-1 transition-colors">
           <Home className="w-4 h-4" />
           <span className="hidden lg:inline">Home</span>
         </Link>
 
         {!loading && session?.user ? (
           <>
-            <Link href="/presentations" className="hover:text-blue-600 flex items-center gap-1 transition-colors">
+            <Link href="/presentations" className="hover:text-[#5eadff] flex items-center gap-1 transition-colors">
               <Presentation className="w-4 h-4" />
               <span className="hidden lg:inline">My Decks</span>
             </Link>
 
-            <Link href="/profile" className="flex items-center gap-2 hover:text-blue-600 transition-colors" title="Profile">
+            <Link href="/profile" className="flex items-center gap-2 hover:text-[#5eadff] transition-colors" title="Profile">
               <UserAvatar user={session.user} size={32} />
               <span className="hidden lg:inline text-sm font-medium">{session.user.name}</span>
             </Link>
           </>
         ) : (
-          <Link href="/signin" className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors">
+          <Link href="/signin" className="btn-accent px-4 py-1.5 rounded-lg">
             Sign In
           </Link>
         )}
@@ -98,7 +98,7 @@ const Navbar = ({ onToggleSidebar }) => {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+        className="md:hidden p-2 rounded-lg hover:bg-white/10 text-gray-200 transition-colors"
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -108,33 +108,33 @@ const Navbar = ({ onToggleSidebar }) => {
         <>
           {/* Backdrop overlay */}
           <div
-            className="fixed inset-0 bg-black/20 z-[9998] md:hidden"
+            className="fixed inset-0 bg-black/50 z-[9998] md:hidden"
             onClick={() => setIsMobileMenuOpen(false)}
           />
           {/* Menu */}
-          <div ref={mobileMenuRef} className="absolute top-full left-0 right-0 bg-white border border-gray-200 shadow-xl z-[9999] md:hidden">
+          <div ref={mobileMenuRef} className="absolute top-full left-0 right-0 bg-[#0d0d12] border-b border-white/10 shadow-2xl z-[9999] md:hidden">
             <nav className="flex flex-col p-4 space-y-3">
               <Link
                 href="/"
-                className="text-gray-700 hover:text-blue-600 flex items-center gap-2 py-2 transition-colors"
+                className="text-gray-300 hover:text-[#5eadff] flex items-center gap-2 py-2 transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <Home className="w-4 h-4 text-gray-600" /> Home
+                <Home className="w-4 h-4 text-gray-500" /> Home
               </Link>
 
               {!loading && session?.user ? (
                 <>
                   <Link
                     href="/presentations"
-                    className="text-gray-700 hover:text-blue-600 flex items-center gap-2 py-2 transition-colors"
+                    className="text-gray-300 hover:text-[#5eadff] flex items-center gap-2 py-2 transition-colors"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <Presentation className="w-4 h-4 text-gray-600" /> My Decks
+                    <Presentation className="w-4 h-4 text-gray-500" /> My Decks
                   </Link>
 
                   <Link
                     href="/profile"
-                    className="flex items-center gap-2 py-2 text-gray-700 hover:text-blue-600 transition-colors"
+                    className="flex items-center gap-2 py-2 text-gray-300 hover:text-[#5eadff] transition-colors"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <UserAvatar user={session.user} size={24} />
@@ -144,7 +144,7 @@ const Navbar = ({ onToggleSidebar }) => {
               ) : (
                 <Link
                   href="/signin"
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors text-center"
+                  className="btn-accent px-4 py-2 rounded-lg text-center"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Sign In

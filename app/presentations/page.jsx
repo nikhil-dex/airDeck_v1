@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/Header/navbar";
+import AuroraBackground from "@/components/AuroraBackground";
 import { Presentation, ExternalLink, Link as LinkIcon, Plus, Download, FileCode, Trash2, MoreVertical, Pencil, Check, X, UserPlus, Users, Code } from "lucide-react";
 import { downloadAsPptx, downloadHtmlFile } from "@/lib/exporters";
 
@@ -264,44 +265,46 @@ export default function PresentationsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#070709]">
         <div className="text-center">
-          <svg className="animate-spin h-12 w-12 mx-auto mb-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin h-12 w-12 mx-auto mb-4 text-[#5eadff]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <p className="text-gray-600 font-medium">Loading your decks...</p>
+          <p className="text-gray-400 font-medium">Loading your decks...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
+    <div className="min-h-screen bg-[#070709]">
+      <AuroraBackground />
+      <div className="page-content">
       <Navbar />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-black via-purple-900 to-fuchsia-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-extrabold text-gradient">
             My Decks
           </h1>
           <Link
             href="/"
-            className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold shadow-lg transition-all flex items-center gap-2"
+            className="btn-accent px-5 py-2.5 rounded-lg flex items-center gap-2"
           >
             <Plus className="w-4 h-4" /> New Deck
           </Link>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700 font-medium mb-6">
+          <div className="bg-red-400/5 border border-red-400/20 rounded-2xl p-4 text-red-400 font-medium mb-6">
             {error}
           </div>
         )}
 
         {!error && ppts.length === 0 && (
-          <div className="bg-white rounded-2xl shadow-xl p-12 border border-gray-100 text-center">
-            <Presentation className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <p className="text-xl font-semibold text-gray-700 mb-2">No saved decks yet</p>
+          <div className="glass-card p-12 text-center">
+            <Presentation className="w-12 h-12 mx-auto mb-4 text-gray-600" />
+            <p className="text-xl font-semibold text-gray-200 mb-2">No saved decks yet</p>
             <p className="text-gray-500">
               Generate a presentation and hit &quot;Generate Link&quot; on the export page to save it here.
             </p>
@@ -312,7 +315,9 @@ export default function PresentationsPage() {
           {ppts.map((ppt) => (
             <div
               key={ppt.id}
-              className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow"
+              // The open menu's card must sit above its sibling cards: each
+              // glass card is its own stacking context (backdrop-filter).
+              className={`glass-card p-6 ${menuOpenId === ppt.id ? "z-40" : ""}`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="min-w-0 flex-1">
@@ -329,12 +334,12 @@ export default function PresentationsPage() {
                       maxLength={120}
                       autoFocus
                       disabled={busyKey === `${ppt.id}:rename`}
-                      className="flex-1 px-3 py-1.5 border-2 border-blue-400 rounded-lg text-lg font-semibold text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="flex-1 px-3 py-1.5 bg-white/5 border border-[#5eadff]/60 rounded-lg text-lg font-semibold text-gray-100 focus:ring-1 focus:ring-[#5eadff]/50 outline-none"
                     />
                     <button
                       onClick={() => saveRename(ppt)}
                       disabled={busyKey === `${ppt.id}:rename`}
-                      className="p-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white transition-colors"
+                      className="p-2 rounded-lg bg-[#b3ffc8]/20 hover:bg-[#b3ffc8]/30 disabled:opacity-40 text-[#b3ffc8] transition-colors"
                       title="Save (Enter)"
                     >
                       <Check className="w-4 h-4" />
@@ -342,17 +347,17 @@ export default function PresentationsPage() {
                     <button
                       onClick={cancelRename}
                       disabled={busyKey === `${ppt.id}:rename`}
-                      className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors"
+                      className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 transition-colors"
                       title="Cancel (Esc)"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                 ) : (
-                  <h2 className="text-lg font-semibold text-gray-900 truncate flex items-center gap-2">
+                  <h2 className="text-lg font-semibold text-gray-100 truncate flex items-center gap-2">
                     {ppt.title}
                     {ppt.shared && (
-                      <span className="text-xs font-medium bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                      <span className="text-xs font-medium bg-[#ff6ef7]/10 text-[#ff6ef7] border border-[#ff6ef7]/20 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
                         <Users className="w-3 h-3" /> Shared by {ppt.owner}
                       </span>
                     )}
@@ -363,13 +368,13 @@ export default function PresentationsPage() {
                     year: "numeric", month: "short", day: "numeric",
                   }) : ""}
                   {copiedId === ppt.id && (
-                    <span className="ml-2 text-green-600 font-medium">Link copied!</span>
+                    <span className="ml-2 text-[#b3ffc8] font-medium">Link copied!</span>
                   )}
                   {busyKey === `${ppt.id}:ppt` && (
-                    <span className="ml-2 text-blue-600 font-medium">Preparing PPT...</span>
+                    <span className="ml-2 text-[#5eadff] font-medium">Preparing PPT...</span>
                   )}
                   {busyKey === `${ppt.id}:html` && (
-                    <span className="ml-2 text-blue-600 font-medium">Preparing HTML...</span>
+                    <span className="ml-2 text-[#5eadff] font-medium">Preparing HTML...</span>
                   )}
                   {busyKey === `${ppt.id}:delete` && (
                     <span className="ml-2 text-red-600 font-medium">Deleting...</span>
@@ -378,7 +383,7 @@ export default function PresentationsPage() {
                     <span className="ml-2 text-red-600 font-medium">Removing...</span>
                   )}
                   {busyKey === `${ppt.id}:edit` && (
-                    <span className="ml-2 text-blue-600 font-medium">Opening editor...</span>
+                    <span className="ml-2 text-[#5eadff] font-medium">Opening editor...</span>
                   )}
                 </p>
               </div>
@@ -387,7 +392,7 @@ export default function PresentationsPage() {
                   href={`/present/${ppt.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors flex items-center gap-2"
+                  className="btn-accent px-4 py-2 rounded-lg flex items-center gap-2"
                 >
                   <ExternalLink className="w-4 h-4" /> Present
                 </a>
@@ -396,7 +401,7 @@ export default function PresentationsPage() {
                   <button
                     onClick={() => setMenuOpenId(menuOpenId === ppt.id ? "" : ppt.id)}
                     disabled={Boolean(busyKey)}
-                    className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 transition-colors"
+                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-40 disabled:cursor-not-allowed text-gray-300 transition-colors"
                     title="More actions"
                   >
                     <MoreVertical className="w-5 h-5" />
@@ -406,24 +411,24 @@ export default function PresentationsPage() {
                     <>
                       {/* Invisible backdrop: clicking anywhere else closes the menu */}
                       <div className="fixed inset-0 z-40" onClick={() => setMenuOpenId("")} />
-                      <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-2">
+                      <div className="absolute right-0 top-full mt-2 w-52 bg-[#101016] border border-white/10 rounded-xl shadow-2xl z-50 py-2">
                         {!ppt.shared && (
                           <>
                             <button
                               onClick={() => { setMenuOpenId(""); startEdit(ppt); }}
-                              className="w-full px-4 py-2.5 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                              className="w-full px-4 py-2.5 text-left text-gray-300 hover:bg-white/5 flex items-center gap-3 transition-colors"
                             >
                               <Code className="w-4 h-4 text-gray-500" /> Edit deck
                             </button>
                             <button
                               onClick={() => { setMenuOpenId(""); startRename(ppt); }}
-                              className="w-full px-4 py-2.5 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                              className="w-full px-4 py-2.5 text-left text-gray-300 hover:bg-white/5 flex items-center gap-3 transition-colors"
                             >
                               <Pencil className="w-4 h-4 text-gray-500" /> Rename
                             </button>
                             <button
                               onClick={() => { setMenuOpenId(""); startShare(ppt); }}
-                              className="w-full px-4 py-2.5 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                              className="w-full px-4 py-2.5 text-left text-gray-300 hover:bg-white/5 flex items-center gap-3 transition-colors"
                             >
                               <UserPlus className="w-4 h-4 text-gray-500" /> Share with user
                             </button>
@@ -431,34 +436,34 @@ export default function PresentationsPage() {
                         )}
                         <button
                           onClick={() => { setMenuOpenId(""); copyLink(ppt.id); }}
-                          className="w-full px-4 py-2.5 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                          className="w-full px-4 py-2.5 text-left text-gray-300 hover:bg-white/5 flex items-center gap-3 transition-colors"
                         >
                           <LinkIcon className="w-4 h-4 text-gray-500" /> Copy Link
                         </button>
                         <button
                           onClick={() => { setMenuOpenId(""); handleDownload(ppt, "ppt"); }}
-                          className="w-full px-4 py-2.5 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                          className="w-full px-4 py-2.5 text-left text-gray-300 hover:bg-white/5 flex items-center gap-3 transition-colors"
                         >
                           <Download className="w-4 h-4 text-gray-500" /> Download as PPT
                         </button>
                         <button
                           onClick={() => { setMenuOpenId(""); handleDownload(ppt, "html"); }}
-                          className="w-full px-4 py-2.5 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                          className="w-full px-4 py-2.5 text-left text-gray-300 hover:bg-white/5 flex items-center gap-3 transition-colors"
                         >
                           <FileCode className="w-4 h-4 text-gray-500" /> Download as HTML
                         </button>
-                        <div className="my-2 border-t border-gray-100" />
+                        <div className="my-2 border-t border-white/10" />
                         {!ppt.shared ? (
                           <button
                             onClick={() => { setMenuOpenId(""); handleDelete(ppt); }}
-                            className="w-full px-4 py-2.5 text-left text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                            className="w-full px-4 py-2.5 text-left text-red-400 hover:bg-red-400/10 flex items-center gap-3 transition-colors"
                           >
                             <Trash2 className="w-4 h-4" /> Delete
                           </button>
                         ) : (
                           <button
                             onClick={() => { setMenuOpenId(""); removeFromMyDecks(ppt); }}
-                            className="w-full px-4 py-2.5 text-left text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                            className="w-full px-4 py-2.5 text-left text-red-400 hover:bg-red-400/10 flex items-center gap-3 transition-colors"
                           >
                             <X className="w-4 h-4" /> Remove from My Decks
                           </button>
@@ -471,7 +476,7 @@ export default function PresentationsPage() {
               </div>
 
               {sharingId === ppt.id && (
-                <div className="mt-4 pt-4 border-t border-gray-100">
+                <div className="mt-4 pt-4 border-t border-white/10">
                   <div className="flex flex-col sm:flex-row gap-2">
                     <input
                       type="email"
@@ -481,12 +486,12 @@ export default function PresentationsPage() {
                       placeholder="teammate@example.com"
                       autoFocus
                       disabled={busyKey === `${ppt.id}:share`}
-                      className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                      className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-gray-100 focus:ring-1 focus:ring-[#5eadff]/50 focus:border-[#5eadff] outline-none transition-all"
                     />
                     <button
                       onClick={() => submitShare(ppt)}
                       disabled={busyKey === `${ppt.id}:share` || !shareEmail.trim()}
-                      className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium transition-colors flex items-center justify-center gap-2"
+                      className="btn-accent px-5 py-2 rounded-lg flex items-center justify-center gap-2"
                     >
                       <UserPlus className="w-4 h-4" />
                       {busyKey === `${ppt.id}:share` ? "Sharing..." : "Share"}
@@ -494,25 +499,25 @@ export default function PresentationsPage() {
                     <button
                       onClick={cancelShare}
                       disabled={busyKey === `${ppt.id}:share`}
-                      className="px-5 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors"
+                      className="px-5 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-medium transition-colors"
                     >
                       Close
                     </button>
                   </div>
                   {shareMessage && (
-                    <p className="mt-2 text-sm text-green-600 font-medium">{shareMessage}</p>
+                    <p className="mt-2 text-sm text-[#b3ffc8] font-medium">{shareMessage}</p>
                   )}
 
                   {shareList === null ? (
                     <p className="mt-3 text-sm text-gray-400">Loading current shares...</p>
                   ) : shareList.length > 0 ? (
                     <div className="mt-3">
-                      <p className="text-sm font-medium text-gray-600 mb-2">Currently shared with:</p>
+                      <p className="text-sm font-medium text-gray-400 mb-2">Currently shared with:</p>
                       <div className="flex flex-wrap gap-2">
                         {shareList.map((email) => (
                           <span
                             key={email}
-                            className="inline-flex items-center gap-1.5 bg-violet-50 text-violet-700 text-sm font-medium px-3 py-1.5 rounded-full"
+                            className="inline-flex items-center gap-1.5 bg-[#ff6ef7]/10 text-[#ff6ef7] border border-[#ff6ef7]/20 text-sm font-medium px-3 py-1.5 rounded-full"
                           >
                             {email}
                             <button
@@ -539,6 +544,7 @@ export default function PresentationsPage() {
             </div>
           ))}
         </div>
+      </div>
       </div>
     </div>
   );
