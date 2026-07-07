@@ -1,3 +1,8 @@
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]/route";
+import { dbConnect } from "@/lib/mongodb";
+import User from "@/models/User";
+
 function toErrorMessage(error) {
   if (!error) return "Something went wrong.";
   if (typeof error === "string") return error;
@@ -26,7 +31,42 @@ function formatGeminiApiError(status, model, errorBody) {
 
 export async function POST(req) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.email) {
+          return Response.json({ error: "Sign in to generate presentations." }, { status: 401 });
+        }
+
         const { prompt } = await req.json();
+        if (typeof prompt !== "string" || !prompt.trim()) {
+          return Response.json({ error: "Prompt is required." }, { status: 400 });
+        }
+
+        await dbConnect();
+
+        // Atomically reserve 1 credit before generating. The credit > 0 condition
+        // makes parallel requests safe: only one can take the last credit.
+        const user = await User.findOneAndUpdate(
+          { email: session.user.email, credit: { $gt: 0 } },
+          { $inc: { credit: -1 } },
+          { returnDocument: "after" }
+        );
+
+        if (!user) {
+          const exists = await User.exists({ email: session.user.email });
+          if (!exists) {
+            return Response.json({ error: "User not found." }, { status: 404 });
+          }
+          return Response.json(
+            { error: "You're out of credits. Each generation costs 1 credit." },
+            { status: 402 }
+          );
+        }
+
+        // Generation failed after this point? Give the credit back.
+        const refund = () =>
+          User.updateOne({ _id: user._id }, { $inc: { credit: 1 } }).catch((e) =>
+            console.error("Credit refund failed:", e)
+          );
         
         // const updatedPrompt = `dont make ppt [${prompt}] this is the prompt for making ppt but you have to make web pages using html,css,tailwind of n pages given and they should cover the topic of ppt and everything and should look exactly like the pages of ppt and just provide the code use html boiler for each page make them separate`;
     let updatedPrompt = `Convert this prompt into HTML slide pages: [${prompt}].
@@ -41,6 +81,10 @@ Rules:
 7. NO text outside the JSON array.
 8. DO NOT include Tailwind CDN.
 9. USE ONLY CSS ON EACH PAGE
+10. Design every slide on a fixed 1920x1080 canvas: the root container must be exactly width:1920px, height:1080px with overflow:hidden, and all layout/font sizes based on that canvas.
+11. ALL content must fit fully inside the 1920x1080 canvas with at least 80px from every edge. Budget vertical space: title + margins + content combined must never exceed 1080px. Prefer smaller fonts over overflow.
+12. NEVER use white-space: nowrap on sentence-length text. If you use a typewriter/typing effect, the full line must fit the canvas width at its font size.
+13. Do not position content partially outside its container (e.g. large negative margins or offsets that push elements past the canvas edge).
 
   
 
@@ -50,7 +94,13 @@ Return EXACTLY this format:
   "<!DOCTYPE html> ... </html>"
 ]
 `
-    const result = await sendRequestToGemini(updatedPrompt);
+    let result;
+    try {
+      result = await sendRequestToGemini(updatedPrompt);
+    } catch (err) {
+      await refund();
+      throw err;
+    }
 
     // Join Gemini parts
     const fullText =
@@ -60,21 +110,34 @@ Return EXACTLY this format:
         ?.trim() || "";
 
     if (!fullText) {
-      return Response.json({ result: [] });
+      await refund();
+      return Response.json(
+        { error: "The model returned no slides. Your credit was not used." },
+        { status: 502 }
+      );
     }
 
     // ✅ Parse JSON array safely
     let pages = [];
     try {
       pages = JSON.parse(fullText);
-    } catch (err) {
+    } catch {
+      await refund();
       return Response.json({
-        error: "Model returned non-JSON output.",
+        error: "Model returned non-JSON output. Your credit was not used.",
         raw: fullText,
       });
     }
 
-    return Response.json({ result: pages });
+    if (!Array.isArray(pages) || pages.length === 0) {
+      await refund();
+      return Response.json(
+        { error: "The model returned no slides. Your credit was not used." },
+        { status: 502 }
+      );
+    }
+
+    return Response.json({ result: pages, credit: user.credit });
   } catch (error) {
     return Response.json(
       { error: toErrorMessage(error) },

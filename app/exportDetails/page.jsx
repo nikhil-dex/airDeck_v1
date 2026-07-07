@@ -1,123 +1,82 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Navbar from "../../components/Header/navbar"
-import { Download, Presentation } from 'lucide-react';
-import * as htmlToImage from "html-to-image";
-import PptxGenJS from "pptxgenjs";
+import { Download, Presentation, FileCode } from 'lucide-react';
+import { downloadAsPptx, downloadHtmlFile } from "@/lib/exporters";
+import SlideFrame from "@/components/SlideFrame";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react"
 
 
-export default function CodeIDE() {
+export default function ExportDetails() {
   const router = useRouter();
-  const { data: session } = useSession();
-  const [isLoading, setIsLoading] = useState(true);
-  const [credit, setCredit] = useState(session?.user?.credit || 0);
-  const [code, setCode] = useState([]);
-  const [point, setPoint] = useState(0);
+  const { status } = useSession();
+  // Slides arrive from the editor via localStorage.
+  const [code] = useState(() => {
+    if (typeof window === "undefined") return [];
+    return JSON.parse(localStorage.getItem("pptPages")) || [];
+  });
   const [title, setTitle] = useState('');
   const [exportStatus, setExportStatus] = useState("");
+  const [shareLink, setShareLink] = useState("");
+  const [saveStatus, setSaveStatus] = useState("idle"); // idle | saving | error
+  const [saveError, setSaveError] = useState("");
+  const [copied, setCopied] = useState(false);
   //const [collapsed, setCollapsed] = useState(false);
 
-  const captureAllSlides = async () => {
-    const images = [];
-
-    for (let i = 0; i < code.length; i++) {
-      const tempIframe = document.createElement("iframe");
-      tempIframe.style.width = "1920px";
-      tempIframe.style.height = "1080px";
-      tempIframe.style.position = "absolute";
-      tempIframe.style.left = "-9999px";
-      tempIframe.style.top = "-9999px";
-
-      tempIframe.srcdoc = code[i];
-      document.body.appendChild(tempIframe);
-
-      await new Promise((resolve) => {
-        tempIframe.onload = () => setTimeout(resolve, 350);
-      });
-
-      const dataUrl = await htmlToImage.toPng(
-        tempIframe.contentDocument.body,
-        {
-          backgroundColor: "white",
-          quality: 1,
-          width: 1920,
-          height: 1080,
-          pixelRatio: 2,
-        }
-      );
-
-      images.push(dataUrl);
-      tempIframe.remove();
+  const GenLink = async () => {
+    if (!title.trim()) {
+      setSaveStatus("error");
+      setSaveError("Please enter a title before generating a link.");
+      return;
     }
 
-    return images;
-  };
+    try {
+      setSaveStatus("saving");
+      setSaveError("");
+      setShareLink("");
 
-
-  const generatePPT = async (images) => {
-    const pptx = new PptxGenJS();
-    pptx.layout = "LAYOUT_16x9";
-
-    images.forEach((img) => {
-      const slide = pptx.addSlide();
-      slide.addImage({
-        data: img,
-        x: 0,
-        y: 0,
-        w: 10,
-        h: 5.625,  // correct 16:9 height
-      });
-    });
-
-    await pptx.writeFile(`${title || "presentation"}.pptx`);
-  };
-
-
-
-
-  useEffect(() => {
-    const pages = JSON.parse(localStorage.getItem("pptPages")) || [];
-    setCode(pages);
-  }, []);
-  const editorRef = useRef(null);
-  const handleEditorDidMount = (editor) => {
-    editorRef.current = editor;
-  };
-
-
-
-  const updateCode = (value) => {
-    const newSlides = [...code];
-    newSlides[point] = value;
-    setCode(newSlides);
-  };
-
-  const GenLink = async () => {
-    try{
-      if (!title.trim()) {
-        alert('Please enter a title before exporting.');
-        return;
-      }
       const response = await fetch("/api/save-ppt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, code, user: session?.user?.id }),
-      })
+        body: JSON.stringify({ title, code }),
+      });
       const data = await response.json();
-      console.log(data);
-      if(data.error){
-        alert(data.error);
-      }else{
-        alert(data.message);
+
+      if (!response.ok || data.error) {
+        setSaveStatus("error");
+        setSaveError(data.error || "Failed to save presentation.");
+        return;
       }
 
-    }catch(err){
+      setShareLink(`${window.location.origin}/present/${data.id}`);
+      setSaveStatus("idle");
+    } catch (err) {
       console.error("Error generating link:", err);
+      setSaveStatus("error");
+      setSaveError("Failed to save presentation.");
     }
-   
+  };
+
+  const downloadHtml = () => {
+    if (!title.trim()) {
+      setSaveStatus("error");
+      setSaveError("Please enter a title before downloading.");
+      return;
+    }
+
+    downloadHtmlFile(title, code);
+  };
+
+  const copyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard unavailable — the link is visible and selectable as a fallback.
+    }
   };
 
 
@@ -135,8 +94,7 @@ export default function CodeIDE() {
 
 
 
-      const images = await captureAllSlides();
-      await generatePPT(images);
+      await downloadAsPptx(title, code);
 
       setExportStatus("success");
       setTimeout(() => setExportStatus("idle"), 3000);
@@ -174,18 +132,10 @@ export default function CodeIDE() {
 
 
 useEffect(() => {
-  if (session === null) {
-    router.push('/signin');
-  } else if (session !== undefined) {
-    setIsLoading(false);
-    // Update credit when session loads
-    if (session?.user?.credit !== undefined) {
-      setCredit(session.user.credit);
-    }
-  }
-}, [session, router]);
+  if (status === "unauthenticated") router.push('/signin');
+}, [status, router]);
 
-if (isLoading) {
+if (status !== "authenticated") {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
       <div className="text-center">
@@ -221,7 +171,7 @@ return (
 
 
 
-        <form onSubmit={(e) => { e.preventDefault(); handleExport(); savePpt(); }} className="space-y-8">
+        <form onSubmit={(e) => { e.preventDefault(); handleExport(); }} className="space-y-8">
           <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
             <label htmlFor="title" className="block text-lg font-semibold text-gray-900 mb-3">
               Presentation Title
@@ -243,18 +193,13 @@ return (
           <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Preview</h3>
             <div className="aspect-video w-full bg-gray-100 rounded-lg overflow-hidden shadow-inner">
-              <iframe
-                className="w-full h-full"
-                srcDoc={code[point]}
-                sandbox="allow-scripts allow-same-origin"
-              />
+              <SlideFrame html={code[0]} className="w-full h-full" />
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               type="submit"
-              onClick={handleExport}
               disabled={isDisabled}
               className={`px-8 py-4 flex justify-center items-center gap-3 text-lg font-semibold rounded-xl shadow-lg text-white transition-all duration-200 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 ${buttonStyle}`}
             >
@@ -271,14 +216,65 @@ return (
 
             <button
               type="button"
-              onClick={GenLink}
+              onClick={downloadHtml}
               disabled={isDisabled}
-              className="px-8 py-4 flex justify-center items-center gap-3 text-lg font-semibold rounded-xl shadow-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white transition-all duration-200 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300"
+              className="px-8 py-4 flex justify-center items-center gap-3 text-lg font-semibold rounded-xl shadow-lg bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white transition-all duration-200 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-purple-300"
+            >
+              <FileCode className="w-6 h-6" />
+              <span>Download HTML</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={GenLink}
+              disabled={isDisabled || saveStatus === "saving"}
+              className="px-8 py-4 flex justify-center items-center gap-3 text-lg font-semibold rounded-xl shadow-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white transition-all duration-200 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300"
             >
               <Presentation className="w-6 h-6" />
-              <span>Generate Link</span>
+              <span>{saveStatus === "saving" ? "Saving..." : "Generate Link"}</span>
             </button>
           </div>
+
+          {shareLink && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 border border-green-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                🎉 Your presentation is live
+              </h3>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  readOnly
+                  value={shareLink}
+                  onFocus={(e) => e.target.select()}
+                  className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-700 bg-gray-50 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={copyShareLink}
+                  className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors"
+                >
+                  {copied ? "Copied!" : "Copy Link"}
+                </button>
+                <a
+                  href={shareLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 rounded-xl bg-gray-700 hover:bg-gray-800 text-white font-semibold transition-colors text-center"
+                >
+                  Open
+                </a>
+              </div>
+              <p className="mt-3 text-sm text-gray-500">
+                Anyone with this link can view your presentation fullscreen.
+              </p>
+            </div>
+          )}
+
+          {saveStatus === "error" && saveError && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700 font-medium">
+              {saveError}
+            </div>
+          )}
         </form>
       </div>
     </div>

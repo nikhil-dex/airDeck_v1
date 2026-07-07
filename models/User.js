@@ -7,6 +7,11 @@ const userSchema = new mongoose.Schema({
     unique: true,
     trim: true,
   },
+  // Users get exactly one username change; set when they use it.
+  usernameChanged: {
+    type: Boolean,
+    default: false,
+  },
   name: {
     type: String,
     required: true,
