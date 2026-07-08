@@ -53,7 +53,7 @@ const Navbar = ({ onToggleSidebar }) => {
   }, [isMobileMenuOpen]);
 
   return (
-    <header className="flex items-center justify-between bg-black/40 backdrop-blur-xl px-4 sm:px-6 py-3 border-b border-white/10 relative z-50">
+    <header className="flex items-center justify-between bg-black/40 backdrop-blur-xl px-4 sm:px-6 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-white/10 relative z-50">
       <div className="flex items-center gap-3">
         {onToggleSidebar && (
           <button

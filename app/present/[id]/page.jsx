@@ -110,7 +110,7 @@ export default function PresentPage() {
 
   return (
     <div className="min-h-screen bg-[#070709] flex flex-col">
-      <div className="flex items-center justify-between px-6 py-3">
+      <div className="flex items-center justify-between px-6 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
         <h1 className="text-white font-semibold truncate">{title}</h1>
         <div className="flex items-center gap-3">
           <span className="text-gray-300 text-sm font-medium">
@@ -178,7 +178,7 @@ export default function PresentPage() {
           {isFakeFullscreen && (
             <button
               onClick={() => setIsFakeFullscreen(false)}
-              className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/50 hover:bg-black/80 text-white transition-colors"
+              className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 z-20 p-2 rounded-full bg-black/50 hover:bg-black/80 text-white transition-colors"
               title="Exit fullscreen"
             >
               <X className="w-5 h-5" />
@@ -186,7 +186,7 @@ export default function PresentPage() {
           )}
 
           {isFakeFullscreen && (
-            <span className="absolute bottom-3 right-3 z-20 text-white/70 text-sm font-medium bg-black/40 px-3 py-1 rounded-full">
+            <span className="absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-3 z-20 text-white/70 text-sm font-medium bg-black/40 px-3 py-1 rounded-full">
               {index + 1} / {slides.length}
             </span>
           )}
