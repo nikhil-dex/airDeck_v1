@@ -12,6 +12,7 @@ import {
   Monitor, ChevronLeft, ChevronRight, Save, Plus, Copy, Trash2,
   ChevronUp, ChevronDown, Wand2, Check, Loader2,
   PanelLeftClose, PanelLeftOpen, PanelLeft, PanelBottom,
+  Sparkles, X, RotateCcw,
 } from "lucide-react";
 
 const BEAUTIFY_OPTIONS = {
@@ -102,6 +103,14 @@ export default function CodeIDE() {
   // don't restart on every keystroke; slide operations flush it immediately.
   const [previewCode, setPreviewCode] = useState(code);
   const [saveStatus, setSaveStatus] = useState("saved"); // saved | saving
+
+  // AI slide editing
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiError, setAiError] = useState("");
+  const [aiNotice, setAiNotice] = useState("");
+  const [aiBackup, setAiBackup] = useState(null); // { index, html } — pre-AI version of the last edited slide
   const codeRef = useRef(code);
   const previewTimer = useRef(null);
   const saveTimer = useRef(null);
@@ -176,6 +185,56 @@ export default function CodeIDE() {
     const next = [...code];
     next[point] = beautify.html(next[point], BEAUTIFY_OPTIONS);
     applyCode(next, { instantPreview: true });
+  };
+
+  // ── AI slide editing ────────────────────────────────────────────
+  const runAiEdit = async () => {
+    const instruction = aiPrompt.trim();
+    if (!instruction || aiBusy) return;
+
+    setAiBusy(true);
+    setAiError("");
+    setAiNotice("");
+
+    try {
+      const res = await fetch("/api/edit-slide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slideHtml: codeRef.current[point], instruction }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "AI edit failed.");
+      }
+
+      // Keep the pre-AI version so one bad result is a one-click revert.
+      setAiBackup({ index: point, html: codeRef.current[point] });
+
+      const next = [...codeRef.current];
+      next[point] = beautify.html(data.result, BEAUTIFY_OPTIONS);
+      applyCode(next, { instantPreview: true });
+
+      setAiNotice(
+        typeof data.credit === "number"
+          ? `Applied — ${data.credit} credit${data.credit === 1 ? "" : "s"} left`
+          : "Applied"
+      );
+      setAiPrompt("");
+    } catch (err) {
+      setAiError(err.message || "AI edit failed.");
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  const revertAiEdit = () => {
+    if (!aiBackup) return;
+    const next = [...codeRef.current];
+    next[aiBackup.index] = aiBackup.html;
+    applyCode(next, { instantPreview: true });
+    setPoint(aiBackup.index);
+    setAiBackup(null);
+    setAiNotice("Reverted to the previous version.");
   };
 
   // Arrow keys switch slides — but never while typing in the editor.
@@ -259,7 +318,7 @@ export default function CodeIDE() {
     return (
       <div className="min-h-screen bg-[#070709] flex flex-col">
         <Navbar />
-        <div className="flex-1 flex flex-col items-center px-4 py-6 gap-5">
+        <div className="flex-1 flex flex-col items-center px-4 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] gap-5">
           <div className="w-full max-w-lg glass-card p-5 text-center">
             <Monitor className="w-8 h-8 mx-auto mb-2 text-[#5eadff]" />
             <p className="text-white font-semibold">Code editing needs a desktop</p>
@@ -315,7 +374,7 @@ export default function CodeIDE() {
   return (
     <div className="h-screen bg-[#070709] flex flex-col overflow-hidden">
       {/* ── IDE toolbar ── */}
-      <div className="h-14 shrink-0 flex items-center justify-between px-4 bg-black/40 backdrop-blur-xl border-b border-white/10 z-40">
+      <div className="min-h-14 pt-[env(safe-area-inset-top)] shrink-0 flex items-center justify-between px-4 bg-black/40 backdrop-blur-xl border-b border-white/10 z-40">
         <div className="flex items-center gap-3 min-w-0">
           <Link href="/" className="text-xl font-extrabold glitch shrink-0" data-text="PPTgen">
             PPTgen
@@ -343,6 +402,17 @@ export default function CodeIDE() {
             <Wand2 className="w-4 h-4" />
           </button>
           <button
+            onClick={() => { setAiOpen(!aiOpen); setAiError(""); setAiNotice(""); }}
+            className={`p-2 rounded-lg border transition-colors ${
+              aiOpen
+                ? "bg-[#5eadff]/20 border-[#5eadff]/40 text-[#5eadff]"
+                : "bg-white/5 hover:bg-white/10 border-white/10 text-[#5eadff]"
+            }`}
+            title="Edit this slide with AI (1 credit)"
+          >
+            <Sparkles className="w-4 h-4" />
+          </button>
+          <button
             onClick={deleteSlide}
             disabled={code.length <= 1}
             className="p-2 rounded-lg bg-red-400/10 hover:bg-red-400/20 border border-red-400/20 text-red-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
@@ -368,6 +438,59 @@ export default function CodeIDE() {
           </button>
         </div>
       </div>
+
+      {/* ── AI edit bar ── */}
+      {aiOpen && (
+        <div className="shrink-0 px-4 py-2.5 bg-[#5eadff]/5 border-b border-[#5eadff]/20 flex items-center gap-3 z-40">
+          <Sparkles className="w-4 h-4 text-[#5eadff] shrink-0" />
+          <input
+            type="text"
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") runAiEdit();
+              else if (e.key === "Escape") setAiOpen(false);
+            }}
+            maxLength={500}
+            autoFocus
+            disabled={aiBusy}
+            placeholder={`Tell AI what to change on slide ${point + 1} — e.g. "make it more minimal", "turn the bullets into tabs", "translate to Hindi"`}
+            className="flex-1 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-100 focus:border-[#5eadff] focus:ring-1 focus:ring-[#5eadff]/50 outline-none transition-all"
+          />
+          <button
+            onClick={runAiEdit}
+            disabled={aiBusy || !aiPrompt.trim()}
+            className="btn-accent px-4 py-1.5 rounded-lg text-sm flex items-center gap-2 shrink-0"
+          >
+            {aiBusy ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Working...</>
+            ) : (
+              <>Apply (1 credit)</>
+            )}
+          </button>
+          {aiBackup && !aiBusy && (
+            <button
+              onClick={revertAiEdit}
+              className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-sm flex items-center gap-1.5 shrink-0 transition-colors"
+              title="Undo the last AI edit"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> Revert
+            </button>
+          )}
+          {(aiError || aiNotice) && (
+            <span className={`text-xs shrink-0 max-w-56 truncate ${aiError ? "text-red-400" : "text-[#b3ffc8]"}`} title={aiError || aiNotice}>
+              {aiError || aiNotice}
+            </span>
+          )}
+          <button
+            onClick={() => setAiOpen(false)}
+            className="p-1.5 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-white/5 shrink-0 transition-colors"
+            title="Close AI edit (Esc)"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       <div className={`flex-1 flex min-h-0 ${strip === "bottom" ? "flex-col" : ""}`}>
         {/* ── Filmstrip docked left (vertical) ── */}
