@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Navbar from "../../components/Header/navbar"
 import { Download, Presentation, FileCode } from 'lucide-react';
-import { downloadAsPptx, downloadHtmlFile } from "@/lib/exporters";
+import { downloadAsPptx, downloadHtmlFile, deckHasDynamicContent, PPTX_EXPORT_WARNING } from "@/lib/exporters";
 import SlideFrame from "@/components/SlideFrame";
 import AuroraBackground from "@/components/AuroraBackground";
 import { useRouter } from "next/navigation";
@@ -104,11 +104,12 @@ export default function ExportDetails() {
       return;
     }
 
+    if (deckHasDynamicContent(code) && !window.confirm(PPTX_EXPORT_WARNING)) {
+      return;
+    }
+
     try {
       setExportStatus("loading");
-
-
-
 
       await downloadAsPptx(title, code);
 
@@ -254,6 +255,12 @@ return (
               </span>
             </button>
           </div>
+
+          <p className="text-sm text-center text-gray-500">
+            Heads up: .pptx export flattens slides to static images. Animations and
+            interactive elements survive only in the <span className="text-gray-300">share link</span> and
+            the <span className="text-gray-300">HTML download</span>.
+          </p>
 
           {shareLink && (
             <div className="glass-card p-6 border-[#b3ffc8]/25">

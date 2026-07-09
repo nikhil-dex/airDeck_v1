@@ -3,7 +3,9 @@ import { authOptions } from "../auth/[...nextauth]/route";
 import { dbConnect } from "@/lib/mongodb";
 import User from "@/models/User";
 import { reserveCredit, refundCredit } from "@/lib/credits";
-import { sendRequestToGemini, geminiText, geminiBlockReason, toErrorMessage } from "@/lib/gemini";
+import { llmComplete } from "@/lib/llm";
+import { toErrorMessage } from "@/lib/gemini";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export async function POST(req) {
   try {
@@ -12,6 +14,10 @@ export async function POST(req) {
       return Response.json({ error: "Sign in to generate presentations." }, { status: 401 });
     }
 
+    // Credits already meter platform-key usage; this also bounds BYOK calls.
+    const rl = rateLimit(`generate:${session.user.email}`, { limit: 10 });
+    if (!rl.ok) return rateLimitResponse(rl.retryAfterSeconds);
+
     const { prompt } = await req.json();
     if (typeof prompt !== "string" || !prompt.trim()) {
       return Response.json({ error: "Prompt is required." }, { status: 400 });
@@ -19,17 +25,31 @@ export async function POST(req) {
 
     await dbConnect();
 
-    const user = await reserveCredit(session.user.email);
-    if (!user) {
-      const exists = await User.exists({ email: session.user.email });
-      if (!exists) {
+    // BYOK: with the user's own Gemini key, no credits are touched.
+    const userKey = req.headers.get("x-gemini-key")?.trim() || "";
+    const usingByok = Boolean(userKey);
+
+    let user;
+    if (usingByok) {
+      user = await User.findOne({ email: session.user.email }).select("_id");
+      if (!user) {
         return Response.json({ error: "User not found." }, { status: 404 });
       }
-      return Response.json(
-        { error: "You're out of credits. Each generation costs 1 credit." },
-        { status: 402 }
-      );
+    } else {
+      user = await reserveCredit(session.user.email);
+      if (!user) {
+        const exists = await User.exists({ email: session.user.email });
+        if (!exists) {
+          return Response.json({ error: "User not found." }, { status: 404 });
+        }
+        return Response.json(
+          { error: "You're out of credits. Each generation costs 1 credit." },
+          { status: 402 }
+        );
+      }
     }
+
+    const refund = () => (usingByok ? null : refundCredit(user._id));
 
     const updatedPrompt = `Convert this prompt into HTML slide pages: [${prompt}].
 
@@ -55,19 +75,19 @@ Return EXACTLY this format:
 ]
 `;
 
-    let result;
+    let text, blockReason;
     try {
-      result = await sendRequestToGemini(updatedPrompt);
+      ({ text, blockReason } = await llmComplete(updatedPrompt, {
+        apiKey: userKey || undefined,
+      }));
     } catch (err) {
-      await refundCredit(user._id);
+      await refund();
       throw err;
     }
 
-    const fullText = geminiText(result);
-
-    if (!fullText) {
-      await refundCredit(user._id);
-      if (geminiBlockReason(result)) {
+    if (!text) {
+      await refund();
+      if (blockReason) {
         return Response.json(
           { error: "Your prompt was blocked by content safety filters. Please rephrase it. Your credit was not used." },
           { status: 400 }
@@ -81,24 +101,28 @@ Return EXACTLY this format:
 
     let pages = [];
     try {
-      pages = JSON.parse(fullText);
+      pages = JSON.parse(text);
     } catch {
-      await refundCredit(user._id);
+      await refund();
       return Response.json({
         error: "Model returned non-JSON output. Your credit was not used.",
-        raw: fullText,
+        raw: text,
       });
     }
 
     if (!Array.isArray(pages) || pages.length === 0) {
-      await refundCredit(user._id);
+      await refund();
       return Response.json(
         { error: "The model returned no slides. Your credit was not used." },
         { status: 502 }
       );
     }
 
-    return Response.json({ result: pages, credit: user.credit });
+    return Response.json({
+      result: pages,
+      credit: usingByok ? null : user.credit,
+      byok: usingByok,
+    });
   } catch (error) {
     return Response.json(
       { error: toErrorMessage(error) },

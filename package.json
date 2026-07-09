@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:api": "node --env-file=.env.local --test tests/api-ownership.test.mjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.8.0-rc.2",

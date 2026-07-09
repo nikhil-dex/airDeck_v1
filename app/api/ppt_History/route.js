@@ -20,16 +20,25 @@ export async function GET() {
 
     const myEmail = session.user.email.toLowerCase();
 
+    // $slice: 1 fetches only the first slide per deck — used as the card
+    // thumbnail without pulling whole decks into the list payload.
     const [own, sharedWithMe] = await Promise.all([
       Ppts.find({ userid: String(user._id) })
-        .select("titles createdAt")
+        .select({ titles: 1, createdAt: 1, ppt_History: { $slice: 1 } })
         .sort({ createdAt: -1 })
         .lean(),
       Ppts.find({ sharedWith: myEmail })
-        .select("titles createdAt userid")
+        .select({ titles: 1, createdAt: 1, userid: 1, ppt_History: { $slice: 1 } })
         .sort({ createdAt: -1 })
         .lean(),
     ]);
+
+    // Legacy decks stored slides nested one level deeper: [[slide, ...]]
+    const firstSlide = (p) => {
+      const s = p.ppt_History?.[0];
+      if (Array.isArray(s)) return s[0] || null;
+      return s || null;
+    };
 
     // Resolve owner names for shared decks so the UI can say who shared them.
     const ownerIds = [...new Set(sharedWithMe.map((p) => p.userid))].filter((v) =>
@@ -44,6 +53,7 @@ export async function GET() {
         title: p.titles,
         createdAt: p.createdAt,
         shared: false,
+        thumb: firstSlide(p),
       })),
       ...sharedWithMe.map((p) => ({
         id: String(p._id),
@@ -51,6 +61,7 @@ export async function GET() {
         createdAt: p.createdAt,
         shared: true,
         owner: ownerById[p.userid] || "another user",
+        thumb: firstSlide(p),
       })),
     ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 

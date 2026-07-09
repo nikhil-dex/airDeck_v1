@@ -4,6 +4,7 @@ import { authOptions } from "../../../auth/[...nextauth]/route";
 import { dbConnect } from "@/lib/mongodb";
 import Ppts from "@/models/Ppts";
 import User from "@/models/User";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -52,6 +53,9 @@ export async function DELETE(req, { params }) {
     if (!session?.user?.email) {
       return Response.json({ error: "Sign in first." }, { status: 401 });
     }
+
+    const rl = rateLimit(`share:${session.user.email}`, { limit: 20 });
+    if (!rl.ok) return rateLimitResponse(rl.retryAfterSeconds);
 
     const { id } = await params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -111,6 +115,9 @@ export async function POST(req, { params }) {
     if (!session?.user?.email) {
       return Response.json({ error: "Sign in to share presentations." }, { status: 401 });
     }
+
+    const rl = rateLimit(`share:${session.user.email}`, { limit: 20 });
+    if (!rl.ok) return rateLimitResponse(rl.retryAfterSeconds);
 
     const { id } = await params;
     if (!mongoose.Types.ObjectId.isValid(id)) {

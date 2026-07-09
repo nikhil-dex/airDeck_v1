@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import Navbar from "../../components/Header/navbar";
 import SlideFrame from "@/components/SlideFrame";
+import { BLANK_SLIDE } from "@/lib/blankSlide";
+import { byokHeaders, getByokKey } from "@/lib/byok";
 import Editor from "@monaco-editor/react";
 import beautify from "js-beautify";
 import { useRouter } from "next/navigation";
@@ -21,37 +23,6 @@ const BEAUTIFY_OPTIONS = {
   preserve_newlines: true,
   end_with_newline: true,
 };
-
-const BLANK_SLIDE = `<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body { margin: 0; }
-    .slide {
-      width: 1920px;
-      height: 1080px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background: radial-gradient(circle at 50% 120%, #000 0%, #0a0e27 60%, #000 100%);
-      color: #fff;
-      font-family: system-ui, sans-serif;
-      text-align: center;
-    }
-    h1 { font-size: 96px; margin: 0 0 24px; }
-    p { font-size: 40px; color: #9aa3c0; margin: 0; }
-  </style>
-</head>
-<body>
-  <div class="slide">
-    <h1>New Slide</h1>
-    <p>Edit this slide's HTML in the editor</p>
-  </div>
-</body>
-</html>
-`;
 
 // Monaco is unusable on a phone keyboard, so below md we show a
 // preview + save/export path instead of the editor.
@@ -111,6 +82,7 @@ export default function CodeIDE() {
   const [aiError, setAiError] = useState("");
   const [aiNotice, setAiNotice] = useState("");
   const [aiBackup, setAiBackup] = useState(null); // { index, html } — pre-AI version of the last edited slide
+  const [hasByok] = useState(() => typeof window !== "undefined" && Boolean(getByokKey()));
   const codeRef = useRef(code);
   const previewTimer = useRef(null);
   const saveTimer = useRef(null);
@@ -199,7 +171,7 @@ export default function CodeIDE() {
     try {
       const res = await fetch("/api/edit-slide", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...byokHeaders() },
         body: JSON.stringify({ slideHtml: codeRef.current[point], instruction }),
       });
       const data = await res.json();
@@ -465,7 +437,7 @@ export default function CodeIDE() {
             {aiBusy ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Working...</>
             ) : (
-              <>Apply (1 credit)</>
+              <>Apply {hasByok ? "(your key)" : "(1 credit)"}</>
             )}
           </button>
           {aiBackup && !aiBusy && (

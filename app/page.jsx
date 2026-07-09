@@ -4,6 +4,9 @@ import {useSession} from "next-auth/react"
 import { useEffect, useRef, useState } from "react"
 import Navbar from "@/components/Header/navbar";
 import AuroraBackground from "@/components/AuroraBackground";
+import { BLANK_SLIDE } from "@/lib/blankSlide";
+import { byokHeaders, getByokKey } from "@/lib/byok";
+import { PenLine } from "lucide-react";
 import { Save } from "lucide-react";
 import Link from "next/link";
 
@@ -21,6 +24,7 @@ export default function Home() {
   const [hasSavedDeck] = useState(() =>
     typeof window !== "undefined" && Boolean(localStorage.getItem("pptPages"))
   );
+  const [hasByok] = useState(() => Boolean(getByokKey()));
 
   const credit = creditLeft ?? session?.user?.credit ?? 0;
 
@@ -58,6 +62,14 @@ const formatApiError = (data) => {
   }
 };
 
+// Start a deck from scratch — no prompt, no credit, straight to the editor.
+const startBlankDeck = () => {
+  localStorage.setItem("pptPages", JSON.stringify([BLANK_SLIDE]));
+  localStorage.removeItem("pptEditingId");
+  localStorage.removeItem("pptEditingTitle");
+  router.push("/code-ide");
+};
+
 const sendRequest = async () => {
   console.log("Sending request with prompt:", prompt);
   setLoading(true);
@@ -73,7 +85,7 @@ const sendRequest = async () => {
   try {
     const res = await fetch("/api/generate-ppt", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...byokHeaders() },
       body: JSON.stringify({ prompt }),
     });
 
@@ -130,9 +142,15 @@ const sendRequest = async () => {
             <label className="block text-sm font-semibold text-gray-200">
               Describe your presentation
             </label>
-            <span className={`text-sm font-semibold px-3 py-1 rounded-full border ${credit > 0 ? "border-[#b3ffc8]/30 text-[#b3ffc8] bg-[#b3ffc8]/5" : "border-red-400/30 text-red-400 bg-red-400/5"}`}>
-              {credit} credit{credit === 1 ? "" : "s"} left
-            </span>
+            {hasByok ? (
+              <span className="text-sm font-semibold px-3 py-1 rounded-full border border-[#5eadff]/30 text-[#5eadff] bg-[#5eadff]/5" title="Using your own Gemini API key — no credits used">
+                Your own API key — free
+              </span>
+            ) : (
+              <span className={`text-sm font-semibold px-3 py-1 rounded-full border ${credit > 0 ? "border-[#b3ffc8]/30 text-[#b3ffc8] bg-[#b3ffc8]/5" : "border-red-400/30 text-red-400 bg-red-400/5"}`}>
+                {credit} credit{credit === 1 ? "" : "s"} left
+              </span>
+            )}
           </div>
           <textarea
             className="w-full p-4 bg-white/5 border border-white/10 rounded-xl focus:border-[#5eadff] focus:ring-1 focus:ring-[#5eadff]/50 text-gray-100 transition-all outline-none resize-none"
@@ -158,10 +176,29 @@ const sendRequest = async () => {
             ) : (
               <>
                 <Save className="w-5 h-5" />
-                <span>Generate Presentation</span>
+                <span>Generate Presentation {hasByok ? "(your key)" : "(1 credit)"}</span>
               </>
             )}
           </button>
+
+          {loading && (
+            <p className="mt-3 text-sm text-center text-gray-500">
+              Tip: exporting as .pptx flattens slides to images — share the link or
+              download HTML to keep animations and interactivity alive.
+            </p>
+          )}
+
+          <div className="mt-4 flex items-center justify-center gap-3">
+            <span className="text-sm text-gray-500">or</span>
+            <button
+              onClick={startBlankDeck}
+              disabled={loading}
+              className="text-sm font-medium text-[#5eadff] hover:text-[#8cc5ff] disabled:opacity-40 flex items-center gap-1.5 transition-colors"
+              title="Start a deck from scratch — no AI, no credit"
+            >
+              <PenLine className="w-4 h-4" /> Start from a blank deck (free)
+            </button>
+          </div>
         </div>
         {hasSavedDeck && (
           <div className="text-center mt-8">

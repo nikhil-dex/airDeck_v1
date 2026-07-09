@@ -6,7 +6,8 @@ import { useSession, signOut } from "next-auth/react";
 import Image from "next/image";
 import Navbar from "@/components/Header/navbar";
 import AuroraBackground from "@/components/AuroraBackground";
-import { Coins, Mail, Calendar, AtSign, Pencil, Lock, Check, LogOut } from "lucide-react";
+import { Coins, Mail, Calendar, AtSign, Pencil, Lock, Check, LogOut, KeyRound } from "lucide-react";
+import { BYOK_STORAGE_KEY, getByokKey } from "@/lib/byok";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -20,6 +21,26 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState("");
+
+  // BYOK — the key lives only in this browser's localStorage.
+  const [byokValue, setByokValue] = useState(() => getByokKey());
+  const [byokActive, setByokActive] = useState(() => Boolean(getByokKey()));
+  const [byokMsg, setByokMsg] = useState("");
+
+  const saveByok = () => {
+    const key = byokValue.trim();
+    if (!key) return;
+    localStorage.setItem(BYOK_STORAGE_KEY, key);
+    setByokActive(true);
+    setByokMsg("Key saved in this browser. AI features are now free — no credits used.");
+  };
+
+  const removeByok = () => {
+    localStorage.removeItem(BYOK_STORAGE_KEY);
+    setByokValue("");
+    setByokActive(false);
+    setByokMsg("Key removed. AI features use your credits again.");
+  };
 
   useEffect(() => {
     if (session === null) {
@@ -209,6 +230,56 @@ export default function ProfilePage() {
               )}
               {saveSuccess && (
                 <p className="mt-3 text-sm text-[#b3ffc8] font-medium">{saveSuccess}</p>
+              )}
+            </div>
+
+            {/* BYOK card */}
+            <div className="glass-card p-8">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold text-gray-100 flex items-center gap-2">
+                  <KeyRound className="w-5 h-5 text-[#5eadff]" /> Your own Gemini API key
+                </h3>
+                {byokActive && (
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full border border-[#5eadff]/30 text-[#5eadff] bg-[#5eadff]/5">
+                    Active — AI is free
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-gray-500 mb-4">
+                Bring your own key and generations/AI edits stop using credits. The key is
+                stored <span className="text-gray-300">only in this browser</span> — never on our
+                servers. Get a free key at{" "}
+                <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-[#5eadff] hover:underline">
+                  aistudio.google.com
+                </a>.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="password"
+                  value={byokValue}
+                  onChange={(e) => { setByokValue(e.target.value); setByokMsg(""); }}
+                  placeholder="AIza..."
+                  autoComplete="off"
+                  className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-gray-100 font-mono text-sm focus:ring-1 focus:ring-[#5eadff]/50 focus:border-[#5eadff] outline-none transition-all"
+                />
+                <button
+                  onClick={saveByok}
+                  disabled={!byokValue.trim()}
+                  className="btn-accent px-6 py-3 rounded-xl"
+                >
+                  Save key
+                </button>
+                {byokActive && (
+                  <button
+                    onClick={removeByok}
+                    className="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-semibold transition-colors"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              {byokMsg && (
+                <p className="mt-3 text-sm text-[#b3ffc8] font-medium">{byokMsg}</p>
               )}
             </div>
 
