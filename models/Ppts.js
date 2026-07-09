@@ -1,9 +1,11 @@
 import mongoose from "mongoose";
 
 const PptsSchema = new mongoose.Schema({
+  // Indexed: both fields are queried on every My Decks load.
   userid: {
     type: String,
     required: true,
+    index: true,
   },
   titles:{
     type: String,
@@ -18,6 +20,7 @@ const PptsSchema = new mongoose.Schema({
   sharedWith: {
     type: [String],
     default: [],
+    index: true,
   },
   createdAt: {
     type: Date,

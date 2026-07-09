@@ -3,7 +3,9 @@ import { authOptions } from "../auth/[...nextauth]/route";
 import { dbConnect } from "@/lib/mongodb";
 import User from "@/models/User";
 import { reserveCredit, refundCredit } from "@/lib/credits";
-import { sendRequestToGemini, geminiText, geminiBlockReason, toErrorMessage } from "@/lib/gemini";
+import { llmComplete } from "@/lib/llm";
+import { toErrorMessage } from "@/lib/gemini";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 const MAX_SLIDE_LENGTH = 200_000;
 const MAX_INSTRUCTION_LENGTH = 500;
@@ -30,6 +32,10 @@ export async function POST(req) {
       return Response.json({ error: "Sign in to use AI editing." }, { status: 401 });
     }
 
+    // Credits already meter platform-key usage; this also bounds BYOK calls.
+    const rl = rateLimit(`ai-edit:${session.user.email}`, { limit: 20 });
+    if (!rl.ok) return rateLimitResponse(rl.retryAfterSeconds);
+
     const { slideHtml, instruction } = await req.json();
 
     if (typeof slideHtml !== "string" || !slideHtml.trim() || slideHtml.length > MAX_SLIDE_LENGTH) {
@@ -45,17 +51,31 @@ export async function POST(req) {
 
     await dbConnect();
 
-    const user = await reserveCredit(session.user.email);
-    if (!user) {
-      const exists = await User.exists({ email: session.user.email });
-      if (!exists) {
+    // BYOK: with the user's own Gemini key, no credits are touched.
+    const userKey = req.headers.get("x-gemini-key")?.trim() || "";
+    const usingByok = Boolean(userKey);
+
+    let user;
+    if (usingByok) {
+      user = await User.findOne({ email: session.user.email }).select("_id");
+      if (!user) {
         return Response.json({ error: "User not found." }, { status: 404 });
       }
-      return Response.json(
-        { error: "You're out of credits. Each AI edit costs 1 credit." },
-        { status: 402 }
-      );
+    } else {
+      user = await reserveCredit(session.user.email);
+      if (!user) {
+        const exists = await User.exists({ email: session.user.email });
+        if (!exists) {
+          return Response.json({ error: "User not found." }, { status: 404 });
+        }
+        return Response.json(
+          { error: "You're out of credits. Each AI edit costs 1 credit." },
+          { status: 402 }
+        );
+      }
     }
+
+    const refund = () => (usingByok ? null : refundCredit(user._id));
 
     const prompt = `You are editing ONE slide of an HTML presentation.
 
@@ -72,19 +92,21 @@ Rules:
 5. Preserve everything the instruction does not ask to change (content, styles, animations).
 6. NO explanations. NO markdown. NO backticks. Nothing outside the HTML file.`;
 
-    let result;
+    let text, blockReason;
     try {
-      result = await sendRequestToGemini(prompt);
+      ({ text, blockReason } = await llmComplete(prompt, {
+        apiKey: userKey || undefined,
+      }));
     } catch (err) {
-      await refundCredit(user._id);
+      await refund();
       throw err;
     }
 
-    const html = extractHtml(geminiText(result));
+    const html = extractHtml(text);
 
     if (!html || !/^<!DOCTYPE html/i.test(html) || !/<\/html>\s*$/i.test(html) || html.length > MAX_SLIDE_LENGTH) {
-      await refundCredit(user._id);
-      if (geminiBlockReason(result)) {
+      await refund();
+      if (blockReason) {
         return Response.json(
           { error: "This edit was blocked by content safety filters. Please rephrase the instruction. Your credit was not used." },
           { status: 400 }
@@ -96,7 +118,11 @@ Rules:
       );
     }
 
-    return Response.json({ result: html, credit: user.credit });
+    return Response.json({
+      result: html,
+      credit: usingByok ? null : user.credit,
+      byok: usingByok,
+    });
   } catch (error) {
     return Response.json(
       { error: toErrorMessage(error) },

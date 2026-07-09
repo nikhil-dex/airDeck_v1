@@ -3,6 +3,7 @@ import { authOptions } from "../auth/[...nextauth]/route";
 import { dbConnect } from "@/lib/mongodb";
 import User from "@/models/User";
 import Ppts from "@/models/Ppts";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 const MAX_SLIDES = 50;
 const MAX_SLIDE_LENGTH = 200_000; // chars of HTML per slide
@@ -13,6 +14,9 @@ export async function POST(req) {
     if (!session?.user?.email) {
       return Response.json({ error: "Sign in to save presentations." }, { status: 401 });
     }
+
+    const rl = rateLimit(`save:${session.user.email}`, { limit: 10 });
+    if (!rl.ok) return rateLimitResponse(rl.retryAfterSeconds);
 
     const { title, code } = await req.json();
 

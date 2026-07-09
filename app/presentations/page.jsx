@@ -6,8 +6,9 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/Header/navbar";
 import AuroraBackground from "@/components/AuroraBackground";
-import { Presentation, ExternalLink, Link as LinkIcon, Plus, Download, FileCode, Trash2, MoreVertical, Pencil, Check, X, UserPlus, Users, Code } from "lucide-react";
-import { downloadAsPptx, downloadHtmlFile } from "@/lib/exporters";
+import SlideFrame from "@/components/SlideFrame";
+import { Presentation, ExternalLink, Link as LinkIcon, Plus, Download, FileCode, Trash2, MoreVertical, Pencil, Check, X, UserPlus, Users, Code, Copy } from "lucide-react";
+import { downloadAsPptx, downloadHtmlFile, deckHasDynamicContent, PPTX_EXPORT_WARNING } from "@/lib/exporters";
 
 export default function PresentationsPage() {
   const router = useRouter();
@@ -58,6 +59,9 @@ export default function PresentationsPage() {
       if (kind === "html") {
         downloadHtmlFile(ppt.title, data.slides);
       } else {
+        if (deckHasDynamicContent(data.slides) && !window.confirm(PPTX_EXPORT_WARNING)) {
+          return;
+        }
         await downloadAsPptx(ppt.title, data.slides);
       }
     } catch (err) {
@@ -111,6 +115,27 @@ export default function PresentationsPage() {
       router.push("/code-ide");
     } catch (err) {
       setError(err.message || "Failed to open deck.");
+      setBusyKey("");
+    }
+  };
+
+  // Copy a deck into the user's own account — recipients get an editable
+  // copy of a shared deck; owners can use any deck as a template.
+  const duplicateDeck = async (ppt) => {
+    if (busyKey) return;
+    setBusyKey(`${ppt.id}:duplicate`);
+    setError("");
+
+    try {
+      const res = await fetch(`/api/ppt/${ppt.id}/duplicate`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || data.error || !data.deck) {
+        throw new Error(data.error || "Failed to duplicate.");
+      }
+      setPpts((prev) => [data.deck, ...prev]);
+    } catch (err) {
+      setError(err.message || "Failed to duplicate.");
+    } finally {
       setBusyKey("");
     }
   };
@@ -320,6 +345,24 @@ export default function PresentationsPage() {
               className={`glass-card p-6 ${menuOpenId === ppt.id ? "z-40" : ""}`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              {/* First-slide thumbnail; clicking it presents the deck */}
+              <a
+                href={`/present/${ppt.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 w-full sm:w-44 rounded-lg overflow-hidden ring-1 ring-white/10 hover:ring-[#5eadff]/60 transition-all"
+                title="Open presentation"
+              >
+                {ppt.thumb ? (
+                  <div className="pointer-events-none">
+                    <SlideFrame html={ppt.thumb} className="w-full aspect-video" />
+                  </div>
+                ) : (
+                  <div className="w-full aspect-video bg-white/5 flex items-center justify-center">
+                    <Presentation className="w-8 h-8 text-gray-600" />
+                  </div>
+                )}
+              </a>
               <div className="min-w-0 flex-1">
                 {renamingId === ppt.id ? (
                   <div className="flex items-center gap-2">
@@ -385,6 +428,9 @@ export default function PresentationsPage() {
                   {busyKey === `${ppt.id}:edit` && (
                     <span className="ml-2 text-[#5eadff] font-medium">Opening editor...</span>
                   )}
+                  {busyKey === `${ppt.id}:duplicate` && (
+                    <span className="ml-2 text-[#5eadff] font-medium">Duplicating...</span>
+                  )}
                 </p>
               </div>
               <div className="flex gap-2 shrink-0 items-center">
@@ -434,6 +480,13 @@ export default function PresentationsPage() {
                             </button>
                           </>
                         )}
+                        <button
+                          onClick={() => { setMenuOpenId(""); duplicateDeck(ppt); }}
+                          className="w-full px-4 py-2.5 text-left text-gray-300 hover:bg-white/5 flex items-center gap-3 transition-colors"
+                        >
+                          <Copy className="w-4 h-4 text-gray-500" />
+                          {ppt.shared ? "Duplicate to My Decks" : "Duplicate deck"}
+                        </button>
                         <button
                           onClick={() => { setMenuOpenId(""); copyLink(ppt.id); }}
                           className="w-full px-4 py-2.5 text-left text-gray-300 hover:bg-white/5 flex items-center gap-3 transition-colors"

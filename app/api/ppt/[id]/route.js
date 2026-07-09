@@ -4,6 +4,7 @@ import { authOptions } from "../../auth/[...nextauth]/route";
 import { dbConnect } from "@/lib/mongodb";
 import Ppts from "@/models/Ppts";
 import User from "@/models/User";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 // Public by link: anyone with a deck's URL can view it (like an unlisted video).
 export async function GET(req, { params }) {
@@ -52,6 +53,9 @@ export async function PATCH(req, { params }) {
     if (!session?.user?.email) {
       return Response.json({ error: "Sign in to update presentations." }, { status: 401 });
     }
+
+    const rl = rateLimit(`update:${session.user.email}`, { limit: 30 });
+    if (!rl.ok) return rateLimitResponse(rl.retryAfterSeconds);
 
     const { id } = await params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -122,6 +126,9 @@ export async function DELETE(req, { params }) {
     if (!session?.user?.email) {
       return Response.json({ error: "Sign in to delete presentations." }, { status: 401 });
     }
+
+    const rl = rateLimit(`delete:${session.user.email}`, { limit: 30 });
+    if (!rl.ok) return rateLimitResponse(rl.retryAfterSeconds);
 
     const { id } = await params;
     if (!mongoose.Types.ObjectId.isValid(id)) {

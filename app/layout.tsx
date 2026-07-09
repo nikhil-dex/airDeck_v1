@@ -14,6 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Absolute base for OG image URLs in link unfurls.
+  metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3000"),
   title: "Pptgen",
   description: "Transform your ideas into stunning presentations with AI - Create professional PPTs in an instant",
   // iOS: run without browser chrome when launched from the home screen.
