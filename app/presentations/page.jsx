@@ -355,7 +355,7 @@ export default function PresentationsPage() {
               >
                 {ppt.thumb ? (
                   <div className="pointer-events-none">
-                    <SlideFrame html={ppt.thumb} className="w-full aspect-video" />
+                    <SlideFrame html={ppt.thumb} still className="w-full aspect-video" />
                   </div>
                 ) : (
                   <div className="w-full aspect-video bg-white/5 flex items-center justify-center">

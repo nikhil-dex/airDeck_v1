@@ -10,7 +10,19 @@ import { withAutoFit } from "@/lib/slideAutofit";
 const SLIDE_W = 1920;
 const SLIDE_H = 1080;
 
-export default function SlideFrame({ html, className = "", title = "Slide" }) {
+// For thumbnails: freeze all animations inside the slide. Dozens of live
+// animated iframes exhaust mobile GPUs/memory and crash Safari.
+const STILL_CSS =
+  '<style data-pptgen-still>*,*::before,*::after{animation-play-state:paused!important;transition:none!important}</style>';
+
+function withStill(html) {
+  if (typeof html !== "string" || html.includes("data-pptgen-still")) return html;
+  return /<\/head>/i.test(html)
+    ? html.replace(/<\/head>/i, `${STILL_CSS}</head>`)
+    : STILL_CSS + html;
+}
+
+export default function SlideFrame({ html, className = "", title = "Slide", still = false }) {
   const containerRef = useRef(null);
   const [layout, setLayout] = useState(null);
 
@@ -37,8 +49,9 @@ export default function SlideFrame({ html, className = "", title = "Slide" }) {
     <div ref={containerRef} className={`relative overflow-hidden ${className}`}>
       {layout && layout.scale > 0 && (
         <iframe
-          srcDoc={withAutoFit(html)}
+          srcDoc={still ? withStill(withAutoFit(html)) : withAutoFit(html)}
           sandbox="allow-scripts"
+          loading="lazy"
           title={title}
           className="absolute bg-white"
           style={{
