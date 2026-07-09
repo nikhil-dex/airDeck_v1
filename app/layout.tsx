@@ -15,7 +15,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   // Absolute base for OG image URLs in link unfurls.
-  metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3000"),
+  // Vercel injects VERCEL_URL; NEXTAUTH_URL (the stable prod domain) wins when set.
+  metadataBase: new URL(
+    process.env.NEXTAUTH_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+  ),
   title: "Pptgen",
   description: "Transform your ideas into stunning presentations with AI - Create professional PPTs in an instant",
   // iOS: run without browser chrome when launched from the home screen.
