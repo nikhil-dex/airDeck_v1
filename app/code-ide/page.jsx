@@ -514,7 +514,7 @@ export default function CodeIDE() {
                     title={`Slide ${i + 1}`}
                   >
                     <div className="pointer-events-none">
-                      <SlideFrame html={slide} className="w-full aspect-video" />
+                      <SlideFrame html={slide} still className="w-full aspect-video" />
                     </div>
                     <span className="absolute bottom-1 left-1 text-[10px] font-bold text-white bg-black/60 px-1.5 py-0.5 rounded">
                       {i + 1}
@@ -638,7 +638,7 @@ export default function CodeIDE() {
                     title={`Slide ${i + 1}`}
                   >
                     <div className="pointer-events-none">
-                      <SlideFrame html={slide} className="w-full aspect-video" />
+                      <SlideFrame html={slide} still className="w-full aspect-video" />
                     </div>
                     <span className="absolute bottom-1 left-1 text-[10px] font-bold text-white bg-black/60 px-1.5 py-0.5 rounded">
                       {i + 1}

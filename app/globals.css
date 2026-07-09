@@ -237,6 +237,16 @@ textarea::placeholder {
   99% { transform: translateX(2px); opacity: 0.4; }
 }
 
+/* Phones: large blur layers are expensive on mobile GPUs and can crash
+   Safari when combined with slide iframes — render the aurora lighter. */
+@media (max-width: 767px) {
+  .aurora-blob {
+    filter: blur(40px);
+    opacity: 0.1;
+    animation: none;
+  }
+}
+
 /* Respect users who prefer less motion */
 @media (prefers-reduced-motion: reduce) {
   .aurora-blob,

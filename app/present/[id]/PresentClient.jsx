@@ -19,6 +19,11 @@ export default function PresentClient() {
   const [isFakeFullscreen, setIsFakeFullscreen] = useState(false);
   const stageRef = useRef(null);
   const touchRef = useRef(null);
+  // Keeping neighbor slides mounted makes transitions instant, but three
+  // full slide iframes can exhaust memory on phones — preload on desktop only.
+  const [preloadNeighbors] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches
+  );
 
   useEffect(() => {
     if (!id) return;
@@ -180,7 +185,7 @@ export default function PresentClient() {
               mean advancing just flips opacity instead of reloading an iframe,
               so transitions are instant in both directions. */}
           {slides.map((slide, i) => {
-            if (Math.abs(i - index) > 1) return null;
+            if (Math.abs(i - index) > (preloadNeighbors ? 1 : 0)) return null;
             return (
               <div
                 key={i}
