@@ -44,11 +44,14 @@ export default function CodeIDE() {
   const isDesktop = useIsDesktop();
   const [point, setPoint] = useState(0);
    //disABLE JS PAST BY USER
-    const [generatedBy] =
-    useState(
-        localStorage.getItem(
-            "pptGeneratedBy"
-        ) || "user"
+const [generatedBy] =
+    useState(() =>
+        typeof window ===
+        "undefined"
+            ? "user"
+            : localStorage.getItem(
+                  "pptGeneratedBy"
+              ) || "user"
     );
     const [jsAttempts,
 setJsAttempts] =
@@ -412,24 +415,12 @@ if (attempts > 3) {
 
   return (
     <div className="h-screen bg-[#070709] flex flex-col overflow-hidden">
-        <div
-                className="
-                shrink-0
-                bg-orange-500/10
-                border-b
-                border-orange-500/20
-                px-4
-                py-2
-                text-sm
-                text-orange-300
-                flex
-                items-center
-                justify-center
-                "
-            >
-                ⚠ JavaScript is currently unavailable.
-                Available in AIRDeck Sandbox.
-            </div>
+       {generatedBy !== "ai" && (
+    <div className="...">
+        ⚠ JavaScript is currently unavailable.
+        Available in AIRDeck Sandbox.
+    </div>
+)}
       {/* ── IDE toolbar ── */}
       <div className="min-h-14 pt-[env(safe-area-inset-top)] shrink-0 flex items-center justify-between px-4 bg-black/40 backdrop-blur-xl border-b border-white/10 z-40">
         <div className="flex items-center gap-3 min-w-0">
