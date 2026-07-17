@@ -63,10 +63,35 @@ const formatApiError = (data) => {
 };
 
 // Start a deck from scratch — no prompt, no credit, straight to the editor.
+// const startBlankDeck = () => {
+//   localStorage.setItem("pptPages", JSON.stringify([BLANK_SLIDE]));
+//   localStorage.setItem(
+//   "pptGeneratedBy",
+//   "ai"
+// );
+//   localStorage.removeItem("pptEditingId");
+//   localStorage.removeItem("pptEditingTitle");
+//   router.push("/code-ide");
+// };
 const startBlankDeck = () => {
-  localStorage.setItem("pptPages", JSON.stringify([BLANK_SLIDE]));
-  localStorage.removeItem("pptEditingId");
-  localStorage.removeItem("pptEditingTitle");
+  localStorage.setItem(
+    "pptPages",
+    JSON.stringify([BLANK_SLIDE])
+  );
+
+  localStorage.setItem(
+    "pptGeneratedBy",
+    "user"
+  );
+
+  localStorage.removeItem(
+    "pptEditingId"
+  );
+
+  localStorage.removeItem(
+    "pptEditingTitle"
+  );
+
   router.push("/code-ide");
 };
 
