@@ -416,7 +416,20 @@ if (attempts > 3) {
   return (
     <div className="h-screen bg-[#070709] flex flex-col overflow-hidden">
        {generatedBy !== "ai" && (
-    <div className="...">
+    <div className="
+                shrink-0
+                bg-orange-500/10
+                border-b
+                border-orange-500/20
+                px-4
+                py-2
+                text-sm
+                text-orange-300
+                flex
+                items-center
+                justify-center
+                "
+            >
         ⚠ JavaScript is currently unavailable.
         Available in AIRDeck Sandbox.
     </div>
